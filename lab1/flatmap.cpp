@@ -186,18 +186,6 @@ bool operator == (const Value & a, const Value & b) {
     return  a.age == b.age && a.weight == b.weight;
 }
 
-bool operator == (Value & a, Value & b) {
-    return  a.age == b.age && a.weight == b.weight;
-}
-
-bool operator != (const Value& a, const Value& b){
-    return  !(a == b);
-}
-
-bool operator != (Value& a, Value& b){
-    return  !(a == b);
-}
-
 bool operator == (const FlatMap &a, const FlatMap &b) {
     if (a.capacity == b.capacity) {
         for (size_t i = 0; i < a.capacity; ++i) {
