@@ -1,180 +1,134 @@
-#include <iostream>
 #include <algorithm>
-#include <string>
 #include <gtest/gtest.h>
+#include "flatmap.h"
 
 using namespace std;
 
-typedef string Key;
-
-struct Value {
-    unsigned age;
-    unsigned weight;
+class F_test : public testing::Test{
+protected: FlatMap a,b;
 };
 
-class FlatMap
-{
-private:
-    size_t size;
-    size_t capacity;
-    Value *val;
-    Key *keys;
-    size_t bin_util(const Key key) const{
-        if(capacity == 0){
-            return 0;
-        }
-        if(key == keys[0])
-            return 0;
-        if(key == keys[capacity - 1])
-            return capacity - 1;
-        size_t left = 0,right = capacity - 1;
-        while(left < right){
-            size_t mid = left + ((right - left) / 2);
-            if(key == keys[mid]){
-                return mid;
-            }
-            else if(key > keys[mid]){
-                left = mid + 1;
-            }
-            else{
-                right = mid;
-            }
-        }
-        return left;
-    }
-    int bin_search(const Key key) const{
-        size_t id= bin_util(key);
-        if(keys[id] == key){
-            return id;
-        }
-        return -1;
-    }
-    void resize() {
-        size_t new_size = size * 2;
-        Value * new_val = new Value[new_size];
-        Key * new_keys = new Key[new_size];
-        copy(val, val + capacity, new_val);
-        copy(keys, keys + capacity, new_keys);
-        delete[] val;
-        delete[] keys;
-        val = new_val;
-        keys = new_keys;
-        size = new_size;
-    }
-    void set(long long i, const Key& key, const Value& value){
-        val[i] = value;
-        keys[i] = key;
-    }
-public:
-    FlatMap(){
-        size = 1;
-        capacity = 0;
-        val = new Value[size];
-        keys = new Key[size];
-    }
-    ~FlatMap(){
-        delete[] val;;
-        delete[] keys;
-    }
-    FlatMap(const FlatMap& b){
-        size = b.size;
-        capacity = b.capacity;
-        val = new Value[size];
-        keys = new Key[size];
-        copy(b.val,b.val + capacity, val);
-        copy(b.keys, b.keys + capacity, keys);
-    }
-
-    FlatMap& operator=(const FlatMap& b){
-        if(&b == this){
-            return *this;
-        }
-        size = b.size;
-        capacity = b.capacity;
-        delete[] val;
-        delete[] keys;
-        val = new Value[size];
-        keys = new Key [size];
-        copy(b.val, b.val + capacity, val);
-        copy(b.keys, b.keys + capacity, keys);
-        return *this;
-    }
-
-    // Удаляет элемент по заданному ключу.
-    bool erase(const Key& k){
-        int id = bin_search(k);
-        if(id == -1){
-            return false;
-        }
-        capacity--;
-        copy(val + id + 1, val + capacity, val + id);
-        copy(keys + id + 1, keys + capacity, keys + id);
-    }
-    // Вставка в контейнер. Возвращаемое значение - успешность вставки.
-    bool contains(const Key& key) const{
-        return bin_search(key) != -1;
-    }
-    bool insert(const Key& key, const Value& value){
-        if(contains(key) == true){
-            return false;
-        }
-        if(capacity == size){
-            resize();
-        }
-        if(capacity == 0){
-            set(0, key, value);
-            capacity++;
-            return true;
-        }
-        if(key > keys[capacity - 1]){
-            set(capacity, key, value);
-            capacity++;
-            return true;
-        }
-        if(key == keys[0]){
-            set(0, key, value);
-            return true;
-        }
-        if(key == keys[capacity - 1]){
-            set(capacity - 1, key, value);
-            return true;
-        }
-        size_t id = bin_util(key);
-        for(size_t i = capacity;i > id;--i){
-            val[i] = val[i - 1];
-            keys[i] = keys[i - 1];
-        }
-        set(id, key, value);
-        capacity++;
-        return true;
-    }
-
-    size_t get_size() const{
-        return size;
-    }
-    bool empty() const{
-        return capacity == 0;
-    }
-    //for debug purposes
-    void print(){
-        for(size_t i = 0;i < capacity;++i){
-            cout << i << "." << keys[i] << ":" << val[i].age << "," << val[i].weight << endl;
-        }
-    }
-};
-TEST(TestMap, Empty){
-    FlatMap a;
+TEST_F(F_test, Empty){
     EXPECT_EQ(true, a.empty());
     a.insert("Rei", {18, 64});
     EXPECT_EQ(false, a.empty());
 }
-TEST(TestMap, Insert){
-    FlatMap a;
+TEST_F(F_test, Insert){
     EXPECT_EQ(true, a.insert("Rei",{14, 50}));
     EXPECT_EQ(false, a.insert("Rei",{15, 50}));
     EXPECT_EQ(1, a.get_size());
     EXPECT_EQ(true, a.insert("Asuka", {14, 100}));
 }
+
+TEST_F(F_test, Erase) {
+    EXPECT_EQ(false, a.erase("EVA00"));
+    a["EVA00"] = {1, 2};
+    a["EVA01"] = {3, 4};
+    a["EVA02"] = {5, 6};
+    EXPECT_EQ(true, a.erase("EVA00"));
+    EXPECT_EQ(true, a.erase("EVA01"));
+    EXPECT_EQ(true, a.erase("EVA02"));
+    EXPECT_EQ(0, a.get_size());
+}
+
+TEST_F(F_test, Inequality) {
+    a.insert("K-ON!", {3, 2});
+    a.insert("Mio", {6, 5});
+    a.insert("Azuza", {6, 7});
+    b.insert("Eva", {3, 2});
+    b.insert("Asuka", {4, 9});
+    b.insert("Rei", {6, 7});
+    a = b;
+    a.erase("Asuka");
+    ASSERT_EQ(true, a != b);
+}
+
+TEST_F(F_test, Equality) {
+    a.insert("K-ON!", {3, 2});
+    a.insert("Mugi", {4, 5});
+    a.insert("Ton", {6, 7});
+    b = a;
+    ASSERT_EQ(true, a == b);
+    b.erase("K-ON!");
+    ASSERT_EQ(false, a == b);
+    ASSERT_EQ(true, a != b);
+    b.insert("K-ON!", {2, 1});
+    ASSERT_EQ(false, a == b);
+}
+
+TEST_F(F_test, Swap) {
+    a.insert("K-ON!", {3, 0});
+    a.insert("Yui", {6, 899});
+    a.insert("Ritsu", {9, 7});
+    b.insert("Eva", {56, 2});
+    b.insert("Asuka", {4, 9});
+    b.insert("Rei", {6, 6});
+    a.swap(b);
+    ASSERT_EQ(false, a == b);
+    b.swap(a);
+    ASSERT_EQ(true, a.contains("K-ON!"));
+}
+
+TEST_F(F_test, Clear) {
+    a.insert("Guts", {3, 0});
+    a.insert("Griffith", {6, 899});
+    a.insert("Casca", {9, 7});
+    ASSERT_EQ(3, a.get_size());
+    a.clear();
+    ASSERT_EQ(0, a.get_size());
+    EXPECT_ANY_THROW(a.at("Guts"));
+    EXPECT_ANY_THROW(a.at("Griffith"));
+    EXPECT_ANY_THROW(a.at("Casca"));
+}
+
+TEST_F(F_test, Contains) {
+    a.insert("MiA", {3, 0});
+    a.insert("Riko", {6, 899});
+    a.insert("Reg", {9, 7});
+    FlatMap c(a);
+    a.erase("MiA");
+    a.erase("Riko");
+    a.erase("Reg");
+    ASSERT_EQ(false, a == c);
+    EXPECT_ANY_THROW(a.at("MiA"));
+    EXPECT_ANY_THROW(a.at("Riko"));
+    EXPECT_ANY_THROW(a.at("Reg"));
+}
+
+/*TEST_F(F_test, Array_overload) {   //Broken smh
+    Value c = {0, 0};
+    EXPECT_EQ(c, a["Key"]);
+    c = {1, 2};
+    a["Key"] = c;
+    EXPECT_EQ(c, a["Key"]);
+} */
+
+TEST_F(F_test, key_search) {
+    a.insert("K-ON!", {3, 0});
+    a.insert("Yui", {6, 899});
+    a.insert("Ui", {9, 7});
+    b = a;
+    ASSERT_EQ(true, a == b);
+    Value check = {3, 0};
+    a.erase("K-ON!");
+    ASSERT_EQ(true, check.age == b.at("K-ON!").age);
+    ASSERT_EQ(true, check.weight == b.at("K-ON!").weight);
+    EXPECT_ANY_THROW(a.at("K-ON!"));
+}
+
+TEST_F(F_test, key_search_const) {
+    a.insert("K-ON!", {3, 0});
+    a.insert("Yui", {6, 899});
+    a.insert("Ui", {9, 7});
+    const FlatMap c(a);
+    const Value check = {3, 0};
+    ASSERT_EQ(true, a == c);
+    a.erase("K-ON!");
+    ASSERT_EQ(true, c.at("K-ON!").age == check.age);
+    ASSERT_EQ(true, c.at("K-ON!").weight == check.weight);
+    EXPECT_ANY_THROW(a.at("K-ON!"));
+}
+
 int main() {
     testing::InitGoogleTest();
     return RUN_ALL_TESTS();
