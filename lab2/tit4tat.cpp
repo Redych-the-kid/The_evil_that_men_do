@@ -16,7 +16,7 @@ size_t Tit4tat::decide() {
 }
 
 void Tit4tat::add_enemy_desicions(size_t first, size_t second) {
-    if(first == DEFECT || second == DEFECT){
+    if (first == DEFECT || second == DEFECT) {
         betrayal_happend = true;
     }
     else{

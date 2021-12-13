@@ -2,13 +2,13 @@
 
 Controller::Controller(const std::vector<std::string> &names, size_t steps) {
     this->steps = steps;
-    for(std::string name:names){
+    for (std::string name: names) {
         add_strategy(name);
     }
 }
 
 void Controller::print_state() {
-    for(Information info : strategy_info){
+    for (Information info: strategy_info) {
         std::cout << info.name << ":" << info.score_current << std::endl;
     }
 }
@@ -21,9 +21,9 @@ void Controller::add_strategy(const std::string &name) {
 }
 
 void Controller::print_winner() {
-    const Information * max_strategy = nullptr;
-    for(size_t i = 0; i < strategy_info.size(); ++i){
-        if(max_strategy == nullptr || strategy_info.at(i).score_current > max_strategy->score_current){
+    const Information *max_strategy = nullptr;
+    for (size_t i = 0;i < strategy_info.size();++i) {
+        if (max_strategy == nullptr || strategy_info.at(i).score_current > max_strategy->score_current) {
             max_strategy = &strategy_info.at(i);
         }
     }
@@ -31,7 +31,7 @@ void Controller::print_winner() {
 }
 
 void Controller::do_iteration(size_t first, size_t second, size_t third) {
-    std::shared_ptr<Strategy> s_first = strategy_info.at(first).strategy;
+    Strategy *s_first = strategy_info.at(first).strategy.get();
     std::shared_ptr<Strategy> s_second = strategy_info.at(second).strategy;
     std::shared_ptr<Strategy> s_third = strategy_info.at(third).strategy;
 
@@ -43,7 +43,7 @@ void Controller::do_iteration(size_t first, size_t second, size_t third) {
     auto scores = table.get_scores(d_first, d_second, d_third);
 
     s_first->add_enemy_desicions(d_second, d_third);
-    s_second->add_enemy_desicions(d_first,d_third);
+    s_second->add_enemy_desicions(d_first, d_third);
     s_third->add_enemy_desicions(d_first, d_second);
 
     strategy_info.at(first).score_current += std::get<0>(scores);

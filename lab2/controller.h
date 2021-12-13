@@ -1,5 +1,6 @@
 #ifndef LAB2_CONTROLLER_H
 #define LAB2_CONTROLLER_H
+
 #include "factory.h"
 #include "strategy.h"
 #include "score_table.h"
@@ -9,7 +10,7 @@ struct Information{
     Information(std::shared_ptr<Strategy> strategy){
         this->strategy = strategy;
     }
-    std::shared_ptr<Strategy> strategy;
+    std::shared_ptr<Strategy> strategy; //          ?????????????????????????
     size_t score_current = 0;
     size_t score_last = 0;
     size_t choice_last;
