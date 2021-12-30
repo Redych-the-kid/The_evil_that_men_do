@@ -7,10 +7,10 @@
 #include <memory>
 
 struct Information{
-    Information(std::shared_ptr<Strategy> strategy){
-        this->strategy = strategy;
+    Information(std::unique_ptr<Strategy> strategy){
+        this->strategy = std::move(strategy);
     }
-    std::shared_ptr<Strategy> strategy; //          ?????????????????????????
+    std::unique_ptr<Strategy> strategy;
     size_t score_current = 0;
     size_t score_last = 0;
     size_t choice_last;
@@ -23,11 +23,11 @@ public:
     virtual void engage() = 0;
     void print_state();
     void print_winner();
-    std::vector<Information> get_info();
+    const std::vector<Information>& get_info();
 protected:
     size_t steps;
     void do_iteration(size_t first, size_t second, size_t third);
-    std::vector<Information>strategy_info;
+    std::vector<Information> strategy_info;
 private:
     void add_strategy(const std::string &name);
 };

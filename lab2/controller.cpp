@@ -8,16 +8,16 @@ Controller::Controller(const std::vector<std::string> &names, size_t steps) {
 }
 
 void Controller::print_state() {
-    for (Information info: strategy_info) {
+    for (Information &info: strategy_info) {
         std::cout << info.name << ":" << info.score_current << std::endl;
     }
 }
 
 void Controller::add_strategy(const std::string &name) {
-    std::shared_ptr<Strategy> strategy(Factory<Strategy, std::string>::get_instance()->create(name));
-    Information info(strategy);
+    std::unique_ptr<Strategy> strategy(Factory<Strategy, std::string>::get_instance()->create(name));
+    Information info(std::move(strategy));
     info.name = name;
-    strategy_info.push_back(info);
+    strategy_info.push_back(std::move(info));
 }
 
 void Controller::print_winner() {
@@ -32,8 +32,8 @@ void Controller::print_winner() {
 
 void Controller::do_iteration(size_t first, size_t second, size_t third) {
     Strategy *s_first = strategy_info.at(first).strategy.get();
-    std::shared_ptr<Strategy> s_second = strategy_info.at(second).strategy;
-    std::shared_ptr<Strategy> s_third = strategy_info.at(third).strategy;
+    Strategy *s_second = strategy_info.at(second).strategy.get();
+    Strategy *s_third = strategy_info.at(third).strategy.get();
 
     size_t d_first = s_first->decide();
     size_t d_second = s_second->decide();
@@ -59,6 +59,6 @@ void Controller::do_iteration(size_t first, size_t second, size_t third) {
     strategy_info.at(third).choice_last = d_third;
 }
 
-std::vector<Information> Controller::get_info() {
+const std::vector<Information>& Controller::get_info() {
     return strategy_info;
 }

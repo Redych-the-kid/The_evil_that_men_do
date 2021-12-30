@@ -16,7 +16,9 @@ Arg_parser::Arg_parser(int argc, char **argv) {
             }
         } else if (arg.compare(0, steps_flag.size(), steps_flag) == 0) {
             arg = arg.substr(steps_flag.size());
-            steps = atoi(arg.c_str());
+
+            // atoi -> std::???
+            steps = std::stoi(arg);
         } else {
             strategy_names.push_back(arg);
         }

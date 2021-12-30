@@ -1,7 +1,9 @@
 #include "random.h"
-#include "factory.h"
+
 #include <cstdlib>
 #include <ctime>
+
+#include "factory.h"
 
 namespace{
     Strategy *create(){

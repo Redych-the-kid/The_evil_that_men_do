@@ -4,9 +4,12 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#define DEFAULT_STEPS 1
 
-enum Game_modes{
+// constexpr int
+constexpr int DEFAULT_STEPS = 1;
+
+// enum -> enum class
+enum class Game_modes{
     not_set,
     detailed,
     fast,

@@ -4,8 +4,8 @@
 
 class Random: public Strategy{
 public:
-    virtual size_t decide();
-    virtual void load_config();
+    size_t decide() override;
+    void load_config() override;
 private:
     int randomness = 2;
 };

@@ -12,8 +12,8 @@ score_table::score_table() {
     cooperate_score.push_back(7);
 }
 
-std::tuple<int, int, int> score_table::get_scores(size_t first, size_t second, size_t third) {
-    size_t c_counter = 0; //number of cooperations
+std::tuple<int, int, int> score_table::get_scores(std::size_t first, std::size_t second, std::size_t third) {
+    std::size_t c_counter = 0; //number of cooperations
     if(first == COOPERATE) c_counter++;
     if(second == COOPERATE) c_counter++;
     if(third == COOPERATE) c_counter++;

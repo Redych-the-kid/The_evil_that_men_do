@@ -6,7 +6,7 @@
 class Tournament_controller : public Controller{
 public:
     Tournament_controller(std::vector<std::string > &names, size_t steps) : Controller(names, steps){};
-    virtual void engage();
+    void engage() override;
 private:
     void tournament_tick();
 };

@@ -4,8 +4,8 @@
 
 class Tit4tat : public Strategy{
 public:
-    virtual size_t decide();
-    virtual void add_enemy_desicions(size_t first, size_t second);
+    size_t decide() override;
+    void add_enemy_desicions(size_t first, size_t second) override;
 private:
     bool betrayal_happend = false;
 };

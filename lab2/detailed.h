@@ -5,7 +5,7 @@
 class Detailed_controller: public Controller{
 public:
     Detailed_controller(std::vector<std::string> &names, size_t steps): Controller(names, steps){};
-    virtual void engage();
+    void engage() override;
     void test_engage();
 };
 

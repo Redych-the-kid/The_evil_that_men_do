@@ -4,6 +4,6 @@
 
 class Cooperate: public Strategy{
 public:
-    virtual size_t decide();
+    size_t decide() override;
 };
 #endif //LAB2_COOPERATE_H

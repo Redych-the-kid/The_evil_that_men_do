@@ -15,7 +15,7 @@ TEST_F(P_test, Fast_controller_test) {
     names.push_back("cooperate");
     Fast_controller test(names, 2);
     test.engage();
-    auto info = test.get_info();
+    const std::vector<Information>& info = test.get_info();
     EXPECT_EQ(3, info.size());
     EXPECT_EQ(10, info.at(0).score_current);
     EXPECT_EQ(10, info.at(1).score_current);
@@ -30,7 +30,7 @@ TEST_F(P_test, Detailed_controller_test) {
     for (size_t i = 0; i < 2; ++i) {
         test.test_engage();
     }
-    auto info = test.get_info();
+    const std::vector<Information>& info = test.get_info();
     EXPECT_EQ(3, info.size());
     EXPECT_EQ(10, info.at(0).score_current);
     EXPECT_EQ(10, info.at(1).score_current);
@@ -44,7 +44,7 @@ TEST_F(P_test, Tournament_controller_test){
     names.push_back("impostor");
     Tournament_controller test(names, 1);
     test.engage();
-    auto info = test.get_info();
+    const std::vector<Information>& info = test.get_info();
     EXPECT_EQ(4, info.size());
     EXPECT_EQ(6, info.at(0).score_current);
     EXPECT_EQ(6, info.at(1).score_current);
