@@ -1,0 +1,12 @@
+R[INFO ] 2022-06-29 13:32:06.984 [Test worker] BFContext - Brackets check success!
+P[INFO ] 2022-06-29 13:32:06.987 [Test worker] Runner - Program loading success!
+h[ERROR] 2022-06-29 13:32:06.989 [Test worker] BFContext - Extra opening bracket was found in your code!
+h[ERROR] 2022-06-29 13:32:06.990 [Test worker] BFContext - Extra closing bracket was found in your code!
+I[INFO ] 2022-06-29 13:32:06.991 [Test worker] Runner - Execution starts!
+a[INFO ] 2022-06-29 13:32:06.993 [Test worker] Factory - Code (+) has been added to the operators
+a[INFO ] 2022-06-29 13:32:06.994 [Test worker] Factory - Code ([) has been added to the operators
+a[INFO ] 2022-06-29 13:32:06.994 [Test worker] Factory - Code (>) has been added to the operators
+a[INFO ] 2022-06-29 13:32:06.995 [Test worker] Factory - Code (<) has been added to the operators
+a[INFO ] 2022-06-29 13:32:06.995 [Test worker] Factory - Code (-) has been added to the operators
+a[INFO ] 2022-06-29 13:32:06.995 [Test worker] Factory - Code (]) has been added to the operators
+N[INFO ] 2022-06-29 13:32:06.996 [Test worker] Runner - Execution is finished!
