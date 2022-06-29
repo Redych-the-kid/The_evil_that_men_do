@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 6.0.1, 2022-01-06T18:15:32. -->
+<!-- Written by QtCreator 7.0.0, 2022-05-07T09:22:00. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -78,7 +78,9 @@
     <value type="bool" key="ClangTools.BuildBeforeAnalysis">true</value>
     <value type="QString" key="ClangTools.DiagnosticConfig">Builtin.DefaultTidyAndClazy</value>
     <value type="int" key="ClangTools.ParallelJobs">4</value>
-    <valuelist type="QVariantList" key="ClangTools.SelectedDirs"/>
+    <valuelist type="QVariantList" key="ClangTools.SelectedDirs">
+     <value type="QString">/home/opezdal/Game_of_life/Game_of_life.pro</value>
+    </valuelist>
     <valuelist type="QVariantList" key="ClangTools.SelectedFiles"/>
     <valuelist type="QVariantList" key="ClangTools.SuppressedDiagnostics"/>
     <value type="bool" key="ClangTools.UseGlobalSettings">true</value>

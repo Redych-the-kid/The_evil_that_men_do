@@ -4,11 +4,22 @@
 #include <iostream>
 #include <vector>
 #include <QString>
+#include <QTextStream>
+#include <string>
+#include <regex>
+#include <cmath>
+#include <QDebug>
 
 class base_game
 {
 public:
-    base_game(std::pair<size_t, size_t> def_size = min_size);
+    struct configs {
+        size_t width;
+        size_t height;
+        QString rule_b;
+        QString rule_s;
+    };
+    base_game(std::pair<size_t, size_t> def_size = {10,10});
 
     void new_iteration();
     size_t survive(size_t x, size_t y);
@@ -28,6 +39,10 @@ public:
     const std::pair<size_t, size_t> & get_min_size() const;
 
     const std::vector<size_t> & get_field() const;
+
+    configs load(QTextStream & in);
+    void read_rules(std::string line, base_game::configs *con);
+    bool read_field_line(std::string line, base_game::configs *con, size_t &pos);
 private:
     static std::pair<size_t, size_t> max_size;
     static std::pair<size_t, size_t> min_size;

@@ -1,7 +1,7 @@
 #include "base_game.h"
 
-std::pair<size_t, size_t> base_game::max_size = std::make_pair(500,500);
-std::pair<size_t, size_t> base_game::min_size = std::make_pair(10,10);
+std::pair<size_t, size_t> base_game::max_size = std::make_pair(100,100);
+std::pair<size_t, size_t> base_game::min_size = std::make_pair(1,1);
 
 base_game::base_game(std::pair<size_t, size_t> def_size) : size(def_size){
     b_rule = {0,0,0,1,0,0,0,0,0};
@@ -59,12 +59,28 @@ void base_game::resize(std::pair<size_t, size_t> new_size)
 
 void base_game::set_h(size_t height)
 {
-    size.second = height;
+    if(height < min_size.second){
+        size.second = min_size.second;
+    }
+    else if(height > max_size.second){
+        size.second = max_size.second;
+    }
+    else{
+        size.second = height;
+    }
 }
 
 void base_game::set_w(size_t width)
 {
-    size.first = width;
+    if(width < min_size.second){
+        size.first = min_size.second;
+    }
+    else if(width > max_size.second){
+        size.first = max_size.second;
+    }
+    else{
+        size.first = width;
+    }
 }
 
 void base_game::set_alive(size_t x, size_t y)
@@ -122,4 +138,104 @@ void base_game::set_rule_s(QString s){
             s_rule[static_cast<int>( c - '0')] = 1;
         }
     }
+}
+
+void base_game::read_rules(std::string line, base_game::configs *con){
+    std::regex size("x = (\\d+), y = (\\d+)");
+    std::smatch match;
+    if(!std::regex_search(line, match, size)){
+        throw std::exception();
+    }
+    con->width = std::stoi(match[1].str());
+    con->height = std::stoi(match[2].str());
+    std::regex rules(", rule = B(\\d+)/S(\\d+)");
+    set_h(con->height);
+    set_w(con->width);
+    if(!std::regex_search(line, match, rules)){
+        third_impact();
+        return;
+    }
+    QString q_b = QString::fromStdString(match[1].str());
+    QString q_s = QString::fromStdString(match[2].str());
+    con->rule_b = q_b;
+    con->rule_s = q_s;
+    set_rule_b(q_b);
+    set_rule_s(q_s);
+    third_impact();
+}
+
+bool base_game::read_field_line(std::string line, base_game::configs *con, size_t & pos){
+    std::string num_string = "";
+    size_t width = con->width;
+    size_t height = con->height;
+    for(char c: line){
+        if(std::isdigit(c)){
+            num_string.push_back(c);
+        }
+        else{
+            size_t num = std::atoi(num_string.c_str());
+            if(num == 0){
+                num = 1;
+            }
+            size_t state = 0;
+            if(c == 'b'){
+                pos += num;
+                num_string = "";
+                continue;
+            }
+            else if(c == 'o'){
+                state = 1;
+            }
+            else if(c == '$'){
+                size_t add = (width - (pos % width)) + (width * (num - 1));
+                if(pos % width == 0){
+                    add -= width;
+                }
+                pos += add;
+                num_string = "";
+                continue;
+            }
+            else if(c == '!'){
+                return false;
+            }
+            else{
+                throw std::invalid_argument("Unknow letter!");
+                return false;
+            }
+            if(pos + num >= width * height){
+                throw std::out_of_range("Out of range!");
+                return false;
+            }
+            for(size_t i = pos;i < pos + num;++i){
+                game_field[i] = state;
+            }
+            pos += num;
+            num_string = "";
+        }
+
+    }
+    return true;
+}
+
+base_game::configs base_game::load(QTextStream & in){
+    configs con;
+    std::string line;
+    bool rules_parsed = false;
+    size_t pos = 0;
+    while(!in.atEnd()){
+        QString q_line = in.readLine();
+        line = q_line.toStdString();
+        if(line[0] == '#' || line.size() == 0){
+            continue;
+        }
+        if(!rules_parsed){
+            read_rules(line, &con);
+            rules_parsed = true;
+            continue;
+        }
+        if(!read_field_line(line, &con, pos)){
+            break;
+        }
+    }
+    return con;
 }
