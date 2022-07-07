@@ -373,11 +373,6 @@ public class Seeder {
 					}
 				}
 			}
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				System.out.println("How I am supposed to sleep in JAVA!!!!!!!!");
-			}
 		}
 	}
 }
