@@ -47,7 +47,6 @@ public class Seeder {
 					.putInt(num)
 					.array();
 			try {
-				System.out.println("notify: new piece");
 				Utils.sendMessage(Utils.Type.NEWPIECE, buf, ch);
 			} catch (IOException e) {
 				e.printStackTrace();
