@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<Servers>
+	<Server>
+		<ServerName>server0</ServerName>
+		<ServerPort>1024</ServerPort>
+	</Server>
+	<Server>
+		<ServerName>server1</ServerName>
+		<ServerPort>1025</ServerPort>
+	</Server>
+	<Server>
+		<ServerName>server2</ServerName>
+		<ServerPort>1026</ServerPort>
+	</Server>
+	<Server>
+		<ServerName>server3</ServerName>
+		<ServerPort>1027</ServerPort>
+	</Server>
+</Servers>
+
