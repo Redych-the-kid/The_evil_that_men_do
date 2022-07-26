@@ -1,6 +1,5 @@
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -24,8 +23,8 @@ import org.xml.sax.SAXException;
 public class Peer
 {
 	private static boolean binded = false; // If server_socket is binded
-	private static final ConcurrentHashMap<String, Socket> sockets = new ConcurrentHashMap<>(); // Concurrent because multiple connection threads are rushin'
-	private static ServerSocket s_socket; // Server socket
+	private static final ConcurrentHashMap<String, SocketChannel> sockets = new ConcurrentHashMap<>(); // Concurrent because multiple connection threads are rushing
+	private static int s_port; // Port of the server
 	public static String server_name; // Name of the server
 	private static final String server_ip = "localhost"; //Assuming that the peers are in the same network
 
@@ -61,19 +60,13 @@ public class Peer
 					{
 						if(!binded) // Double-check
 						{
-							try 
-							{
-								s_socket = new ServerSocket(port);
+								s_port = port;
 								binded = true;
-							} catch (IOException e)
-							{
-								e.printStackTrace();
-							}
 						}
 					}
 					else 
 					{
-							//If it's not ours,than connect to them!
+							//If it's not ours,then connect to them!
 							Thread connection_thread = new Thread(new Connection(port, name, server_ip, sockets));
 							connection_thread.start();
 							connections.add(connection_thread);
@@ -82,15 +75,15 @@ public class Peer
 			}
 
 			//Launch the Server side so server can accept!
-			Thread server_thread = new Thread(new Server(s_socket));
+			Thread server_thread = new Thread(new Server(s_port));
 			server_thread.start();
 
 			//client can't perform operations if he is not in DHT network,so...
-			Iterator<Thread> thread_iter = connections.iterator();
-			while (thread_iter.hasNext()){
-				Thread thread = thread_iter.next();
+			Iterator<Thread> thread_iterator = connections.iterator();
+			while (thread_iterator.hasNext()){
+				Thread thread = thread_iterator.next();
 				thread.join();
-				thread_iter.remove();
+				thread_iterator.remove();
 			}
 
 			//We got connections-release the Client-side!
