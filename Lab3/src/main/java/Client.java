@@ -1,7 +1,6 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,9 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Client implements Runnable {
 
-    private final ConcurrentHashMap<String, Socket> connections; // Just to know where and to whom I need to send or receive if my HT has nuthin...
+    private final ConcurrentHashMap<String, SocketChannel> connections; // Just to know where and to whom I need to send or receive if my HT has nothing...
 
-    public Client(ConcurrentHashMap<String, Socket> connections) {
+    public Client(ConcurrentHashMap<String, SocketChannel> connections) {
         this.connections = connections;
     }
 
@@ -57,11 +56,11 @@ public class Client implements Runnable {
                     String value = parsed_command[2];
 
                     //Hash function determines where to put
-                    Socket socket_by_hash = socket_hash(name);
+                    SocketChannel socket_by_hash = socket_hash(name);
 
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
                     if (socket_by_hash == null) {
-                        boolean result = ClientHandler.put(name, value);
+                        boolean result = Server.put(name, value);
                         if (result){
                             System.out.println("Success");
                         }
@@ -88,7 +87,7 @@ public class Client implements Runnable {
 
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
                     if (socket_by_hash == null) {
-                        String result = ClientHandler.get(get_name);
+                        String result = Server.get(get_name);
                         if(result != null){
                             System.out.println("The value is: " + result);
                         }
@@ -113,7 +112,7 @@ public class Client implements Runnable {
 
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
                     if (socket_by_hash == null) {
-                        boolean result = ClientHandler.del(delete_name);
+                        boolean result = Server.del(delete_name);
                         if (result){
                             System.out.println("Success");
                         }
@@ -135,37 +134,42 @@ public class Client implements Runnable {
         }
     }
 
-    //Simplest hash function eva.Not perfect, but it's doin' okay I guess...
-    public Socket socket_hash(String Key) {
+    //Simplest hash function eva.Not perfect, but it's doing okay I guess...
+    public SocketChannel socket_hash(String Key) {
         String hashValue = "server" + Math.abs((Key.hashCode()) % (connections.size() + 1));
         return connections.get(hashValue);
     }
 
     //Send the request to other peer and get the response
-    public void send_to_other_peer(Socket socket, String type, String message) {
+    public void send_to_other_peer(SocketChannel socket, String type, String message) {
         try {
             //We need those to send/get messages
-            DataInputStream input = new DataInputStream(socket.getInputStream());
-            DataOutputStream output = new DataOutputStream(socket.getOutputStream());
-
+            ByteBuffer buffer = ByteBuffer.wrap((type + " " + message).getBytes());
             //Write type and the message to server
-            output.writeUTF(type);
-            output.writeUTF(message);
-
+            socket.write(buffer);
             //Read the response
-            String result = input.readUTF();
-
+            buffer.flip();
+            int read_count = socket.read(buffer);
+            if(read_count == -1){
+                System.out.println("Server is probably down rn!");
+                //We can remove server here,but it will break hash function so no
+                return;
+            }
+            buffer.flip();
+            byte[] b = new byte[read_count];
+            buffer.get(b, 0, buffer.limit());
+            String response = new String(b).trim();
             //parse it depending on what message type we sent
             if (type.equals("get")) {
-                if(!result.equals("null")){
-                    System.out.println("The value is: " + result);
+                if(!response.equals("null")){
+                    System.out.println("The value is: " + response);
                 }
                 else{
                     System.out.println("Value not found!");
                 }
             }
             else if(type.equals("put") || type.equals("delete")){
-                if (result.equals("true")) {
+                if (response.equals("true")) {
                     System.out.println("Success");
                 } else {
                     System.out.println("Failure");
