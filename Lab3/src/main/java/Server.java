@@ -19,7 +19,7 @@ public class Server implements Runnable{
         this.port = port;
     }
 
-    public static ConcurrentHashMap<String, String> distributedHashTable = new ConcurrentHashMap<>(); // I LOVE static because it made it so simple...
+    private final ConcurrentHashMap<String, SocketChannel> connections; // Just to know where and to whom I need to send or receive if my HT has nothing...
 
     public void run(){
         try {
