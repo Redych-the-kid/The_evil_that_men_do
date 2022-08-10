@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 	1.Put [Key] [Value] - puts an element to DHT.Returns "Success" message if everything is fine of "Failure" message if not.
 	2.Get [Key] - gets the element from DHT.If it contains null, then it returns "Value not found!" message.
 	3.Delete [Key] - deletes a key from DHT.Return is the same as from Put operation.
+	Note: maximum length of a message is 1024(including get, put and delete words plus space symbols)
  */
 public class Client implements Runnable {
 
@@ -26,6 +27,7 @@ public class Client implements Runnable {
         System.out.println("1.Put [Key] [Value] - puts an element to DHT.Returns \"Success\" message if everything is fine of \"Failure\" message if not.");
         System.out.println("2.Get [Key] - gets the element from DHT.If it contains null, then it returns \"Value not found!\" message.");
         System.out.println("3.Delete [Key] - deletes a key from DHT.Return is the same as from Put operation.");
+        System.out.println("Note: maximum length of a message is 1024(including get, put and delete words plus space symbols)");
     }
 
     public void run() {
@@ -36,7 +38,10 @@ public class Client implements Runnable {
             //Reading the command line
             Scanner scanner = new Scanner(System.in);
             String command = scanner.nextLine();
-
+            if (command.length() > 1024) {
+                System.out.println("ERROR!LEN IS MORE THAN 1024!Please write less");
+                continue;
+            }
             //"Parsing" the command line
             String[] parsed_command = command.split(" ");
             type = parsed_command[0].toLowerCase(); // Ignore case is cool, but it saves me many letters of code
@@ -61,10 +66,9 @@ public class Client implements Runnable {
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
                     if (socket_by_hash == null) {
                         boolean result = Server.put(name, value);
-                        if (result){
+                        if (result) {
                             System.out.println("Success");
-                        }
-                        else{
+                        } else {
                             System.out.println("Failure");
                         }
                     } else {
@@ -88,10 +92,9 @@ public class Client implements Runnable {
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
                     if (socket_by_hash == null) {
                         String result = Server.get(get_name);
-                        if(result != null){
+                        if (result != null) {
                             System.out.println("The value is: " + result);
-                        }
-                        else{
+                        } else {
                             System.out.println("Value not found!");
                         }
                     } else {
@@ -113,10 +116,9 @@ public class Client implements Runnable {
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
                     if (socket_by_hash == null) {
                         boolean result = Server.del(delete_name);
-                        if (result){
+                        if (result) {
                             System.out.println("Success");
-                        }
-                        else{
+                        } else {
                             System.out.println("Failure");
                         }
                     } else {
@@ -150,7 +152,7 @@ public class Client implements Runnable {
             //Read the response
             buffer.flip();
             int read_count = socket.read(buffer);
-            if(read_count == -1){
+            if (read_count == -1) {
                 System.out.println("Server is probably down rn!");
                 //We can remove server here,but it will break hash function so no
                 return;
@@ -161,14 +163,12 @@ public class Client implements Runnable {
             String response = new String(b).trim();
             //parse it depending on what message type we sent
             if (type.equals("get")) {
-                if(!response.equals("null")){
+                if (!response.equals("null")) {
                     System.out.println("The value is: " + response);
-                }
-                else{
+                } else {
                     System.out.println("Value not found!");
                 }
-            }
-            else if(type.equals("put") || type.equals("delete")){
+            } else if (type.equals("put") || type.equals("delete")) {
                 if (response.equals("true")) {
                     System.out.println("Success");
                 } else {
