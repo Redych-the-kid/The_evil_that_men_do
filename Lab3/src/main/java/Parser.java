@@ -13,11 +13,11 @@ class Parser {
             InputStream stream = this.getClass().getResourceAsStream("servers");
             properties.load(stream);
             value = properties.getProperty(key);
-        } catch (IOException e){
+        } catch (IOException e) {
             System.out.println("Failed to parse config file!");
             e.printStackTrace();
         }
-        if(value == null){
+        if (value == null) {
             System.out.println("Failed to read the properties!");
             throw new IOException();
         }

@@ -45,19 +45,19 @@ public class Peer {
                 String name = parser.get_properties("SERVER_NAME_" + i);
                 int port = Integer.parseInt(parser.get_properties("SERVER_PORT_" + i));
                 if (name.equalsIgnoreCase(server_name)) // If it's our server-bind to server_socket!
+                {
+                    if (!binded) // Double-check
                     {
-                        if (!binded) // Double-check
-                        {
-                            s_port = port;
-                            binded = true;
-                        }
-                    } else {
-                        //If it's not ours,then connect to them!
-                        Thread connection_thread = new Thread(new Connection(port, name, server_ip, sockets, countdown));
-                        connections.add(connection_thread);
-                        //Add to ports table to be able to reconnect later
-                        socket_ports.put(name, port);
+                        s_port = port;
+                        binded = true;
                     }
+                } else {
+                    //If it's not ours,then connect to them!
+                    Thread connection_thread = new Thread(new Connection(port, name, server_ip, sockets, countdown));
+                    connections.add(connection_thread);
+                    //Add to ports table to be able to reconnect later
+                    socket_ports.put(name, port);
+                }
             }
 
             //Launch the Server side so server can accept!

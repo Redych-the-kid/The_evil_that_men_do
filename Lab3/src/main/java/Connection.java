@@ -15,6 +15,7 @@ public class Connection implements Runnable {
     private final int port; // Peer
 
     private final CountDownLatch counter;
+
     public Connection(int port, String name, String host_ip,
                       ConcurrentHashMap<String, SocketChannel> connections, CountDownLatch countdown) {
         this.connections = connections;
