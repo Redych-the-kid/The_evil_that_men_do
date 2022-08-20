@@ -15,18 +15,18 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Server implements Runnable {
     private final int port;
-
-    public Server(int port) {
+    private final String ip;
+    public Server(int port, String server_ip) {
         this.port = port;
+        this.ip = server_ip;
     }
 
     private static final ConcurrentHashMap<String, String> dht_instance = new ConcurrentHashMap<>(); // I LOVE static because it made it so simple...
-
     public void run() {
         try {
             Selector selector = Selector.open();
             ServerSocketChannel ss_channel = ServerSocketChannel.open();
-            ss_channel.bind(new InetSocketAddress("localhost", port));
+            ss_channel.bind(new InetSocketAddress(ip, port));
             ss_channel.configureBlocking(false);
             ss_channel.register(selector, SelectionKey.OP_ACCEPT);
             while (true) {
@@ -46,6 +46,7 @@ public class Server implements Runnable {
                 }
             }
         } catch (Exception e) {
+            System.out.println("Server has thrown an exception!");
             e.printStackTrace();
         }
     }

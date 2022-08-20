@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Scanner;
@@ -16,9 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Client implements Runnable {
 
     private final ConcurrentHashMap<String, SocketChannel> connections; // Just to know where and to whom I need to send or receive if my HT has nothing...
+    private final ConcurrentHashMap<String, Integer> ports;
 
-    public Client(ConcurrentHashMap<String, SocketChannel> connections) {
+    private final String ip;
+    public Client(ConcurrentHashMap<String, SocketChannel> connections, ConcurrentHashMap<String, Integer> server_ports, String server_ip) {
         this.connections = connections;
+        this.ports = server_ports;
+        this.ip = server_ip;
     }
 
     private void print_help() {
@@ -59,10 +64,9 @@ public class Client implements Runnable {
                     //Get name and value
                     String name = parsed_command[1];
                     String value = parsed_command[2];
-
+                    String hash = socket_hash(name);
                     //Hash function determines where to put
-                    SocketChannel socket_by_hash = socket_hash(name);
-
+                    SocketChannel socket_by_hash = connections.get(hash);
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
                     if (socket_by_hash == null) {
                         boolean result = Server.put(name, value);
@@ -74,7 +78,7 @@ public class Client implements Runnable {
                     } else {
                         //Ok,send this to server that probably can add to his DHT
                         String message = name + " " + value;
-                        send_to_other_peer(socket_by_hash, type, message);
+                        send_to_other_peer(hash, type, message);
                     }
 
                     break;
@@ -86,8 +90,9 @@ public class Client implements Runnable {
                     }
                     String get_name = parsed_command[1];
 
+                    String get_hash = socket_hash(get_name);
                     //Hash function determines where to get
-                    socket_by_hash = socket_hash(get_name);
+                    socket_by_hash = connections.get(get_hash);
 
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
                     if (socket_by_hash == null) {
@@ -98,7 +103,7 @@ public class Client implements Runnable {
                             System.out.println("Value not found!");
                         }
                     } else {
-                        send_to_other_peer(socket_by_hash, type, get_name);
+                        send_to_other_peer(get_hash, type, get_name);
                     }
 
                     break;
@@ -109,9 +114,9 @@ public class Client implements Runnable {
                     }
 
                     String delete_name = parsed_command[1];
-
+                    String delete_hash = socket_hash(delete_name);
                     //Hash function determines where to get
-                    socket_by_hash = socket_hash(delete_name);
+                    socket_by_hash = connections.get(delete_hash);
 
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
                     if (socket_by_hash == null) {
@@ -122,13 +127,16 @@ public class Client implements Runnable {
                             System.out.println("Failure");
                         }
                     } else {
-                        send_to_other_peer(socket_by_hash, type, delete_name);
+                        send_to_other_peer(delete_hash, type, delete_name);
                     }
 
                     break;
                 case "help": //Prints command list so client knows what to type
                     print_help();
                     break;
+                case "exit":
+                    System.out.println("Exiting...");
+                    System.exit(0);
                 default:
                     System.out.println("Wrong command!Type \"help\" to get the command list!");
                     break;
@@ -137,24 +145,68 @@ public class Client implements Runnable {
     }
 
     //Simplest hash function eva.Not perfect, but it's doing okay I guess...
-    public SocketChannel socket_hash(String Key) {
-        String hashValue = "server" + Math.abs((Key.hashCode()) % (connections.size() + 1));
-        return connections.get(hashValue);
+    public String socket_hash(String Key) {
+        int hash = 7;
+        for(char c:Key.toCharArray()){
+            hash = hash * 31 + (int) c;
+        }
+        hash = Math.abs(hash);
+        return "server" + hash % (connections.size() + 1);
     }
 
     //Send the request to other peer and get the response
-    public void send_to_other_peer(SocketChannel socket, String type, String message) {
+    public void send_to_other_peer(String socket_name, String type, String message) {
         try {
+            SocketChannel socket = connections.get(socket_name);
             //We need those to send/get messages
             ByteBuffer buffer = ByteBuffer.wrap((type + " " + message).getBytes());
             //Write type and the message to server
+            if(!socket.isOpen()){
+                boolean reconnected = false;
+                for(int i = 0;i < 3;++i){
+                    try{
+                        System.out.println("Trying to reconnect...please wait");
+                        Thread.sleep(5000);
+                        SocketChannel retry = SocketChannel.open(new InetSocketAddress(ip, ports.get(socket_name)));
+                        connections.put(socket_name, retry);
+                        socket = retry;
+                        reconnected = true;
+                    }
+                    catch (IOException | InterruptedException e){
+                        System.out.println("Failed to reconnect!Trying again!");
+                    }
+                }
+                if(!reconnected){
+                    System.out.println("Reconnection failed!");
+                    return;
+                }
+            }
             socket.write(buffer);
             //Read the response
             buffer.flip();
             int read_count = socket.read(buffer);
-            if (read_count == -1) {
-                System.out.println("Server is probably down rn!");
-                //We can remove server here,but it will break hash function so no
+            if (read_count == -1) { // Oh no!Peer is missing!Trying to get access one more time...
+                System.out.println("Server is probably down rn!Trying to reconnect...");
+                boolean reconnected = false;
+                for(int i = 0;i < 3;++i){ // We have 3 attempts to connect
+                    try{
+                        System.out.println("Trying to reconnect...please wait");
+                        Thread.sleep(5000); // Waiting 5 secs
+                        SocketChannel retry = SocketChannel.open(new InetSocketAddress(ip , ports.get(socket_name)));
+                        connections.put(socket_name, retry);
+                        reconnected = true;
+                        break;
+                    }
+                    catch (IOException | InterruptedException e){
+                        System.out.println("Failed to reconnect!Trying again!");
+                    }
+                }
+                if(!reconnected){
+                    System.out.println("Reconnection failed!");
+                }
+                else{
+                    System.out.println("Reconnection success!Try again now!");
+                }
                 return;
             }
             buffer.flip();
@@ -176,6 +228,7 @@ public class Client implements Runnable {
                 }
             }
         } catch (IOException e) {
+            System.out.println("Client has thrown an exception!");
             e.printStackTrace();
         }
     }
