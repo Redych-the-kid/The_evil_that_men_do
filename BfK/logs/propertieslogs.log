@@ -1,0 +1,91 @@
+[INFO ] 2022-08-23 16:41:24.924 [main] BFContext - Brackets check success!
+[INFO ] 2022-08-23 16:41:24.926 [main] Runner - Program loading success!
+[INFO ] 2022-08-23 16:41:24.926 [main] Runner - Execution starts!
+[INFO ] 2022-08-23 16:41:24.930 [main] Factory - Code (>) has been added to the operators
+[INFO ] 2022-08-23 16:41:24.930 [main] Factory - Code (,) has been added to the operators
+[INFO ] 2022-08-23 16:41:31.261 [main] Factory - Code (<) has been added to the operators
+[INFO ] 2022-08-23 16:41:31.262 [main] Factory - Code (+) has been added to the operators
+[INFO ] 2022-08-23 16:41:31.263 [main] Factory - Code ([) has been added to the operators
+[INFO ] 2022-08-23 16:41:31.264 [main] Factory - Code (-) has been added to the operators
+[INFO ] 2022-08-23 16:41:31.266 [main] Factory - Code (]) has been added to the operators
+[INFO ] 2022-08-23 16:41:31.274 [main] Factory - Code (.) has been added to the operators
+[INFO ] 2022-08-23 16:41:31.275 [main] Runner - Execution is finished!
+[INFO ] 2022-08-23 16:59:56.684 [main] BFContext - Brackets check success!
+[INFO ] 2022-08-23 16:59:56.687 [main] Runner - Program loading success!
+[INFO ] 2022-08-23 16:59:56.687 [main] Runner - Execution starts!
+[INFO ] 2022-08-23 16:59:56.691 [main] Factory - Code (>) has been added to the operators
+[INFO ] 2022-08-23 16:59:56.691 [main] Factory - Code (,) has been added to the operators
+[INFO ] 2022-08-23 17:00:02.057 [main] Factory - Code (<) has been added to the operators
+[INFO ] 2022-08-23 17:00:02.058 [main] Factory - Code (+) has been added to the operators
+[INFO ] 2022-08-23 17:00:02.059 [main] Factory - Code ([) has been added to the operators
+[INFO ] 2022-08-23 17:00:02.060 [main] Factory - Code (-) has been added to the operators
+[INFO ] 2022-08-23 17:00:02.061 [main] Factory - Code (]) has been added to the operators
+[INFO ] 2022-08-23 17:00:02.064 [main] Factory - Code (.) has been added to the operators
+[INFO ] 2022-08-23 17:00:02.065 [main] Runner - Execution is finished!
+[INFO ] 2022-08-23 17:20:29.102 [main] BFContext - Brackets check success!
+[INFO ] 2022-08-23 17:20:29.105 [main] Runner - Program loading success!
+[INFO ] 2022-08-23 17:20:29.105 [main] Runner - Execution starts!
+[INFO ] 2022-08-23 17:20:29.109 [main] Factory - Code (+) has been added to the operators
+[INFO ] 2022-08-23 17:20:29.109 [main] Factory - Code ([) has been added to the operators
+[INFO ] 2022-08-23 17:20:29.109 [main] Factory - Code (>) has been added to the operators
+[INFO ] 2022-08-23 17:20:29.109 [main] Factory - Code (<) has been added to the operators
+[INFO ] 2022-08-23 17:20:29.110 [main] Factory - Code (-) has been added to the operators
+[INFO ] 2022-08-23 17:20:29.110 [main] Factory - Code (]) has been added to the operators
+[INFO ] 2022-08-23 17:20:29.111 [main] Factory - Code (.) has been added to the operators
+[INFO ] 2022-08-23 17:20:29.171 [main] Runner - Execution is finished!
+[ERROR] 2022-08-23 17:20:54.623 [main] Runner - java.io.IOException: getResources failure for fib
+[INFO ] 2022-08-23 17:21:11.555 [main] BFContext - Brackets check success!
+[INFO ] 2022-08-23 17:21:11.558 [main] Runner - Program loading success!
+[INFO ] 2022-08-23 17:21:11.563 [main] Runner - Execution starts!
+[INFO ] 2022-08-23 17:21:11.567 [main] Factory - Code (+) has been added to the operators
+[INFO ] 2022-08-23 17:21:11.567 [main] Factory - Code ([) has been added to the operators
+[INFO ] 2022-08-23 17:21:11.568 [main] Factory - Code (>) has been added to the operators
+[INFO ] 2022-08-23 17:21:11.568 [main] Factory - Code (<) has been added to the operators
+[INFO ] 2022-08-23 17:21:11.569 [main] Factory - Code (-) has been added to the operators
+[INFO ] 2022-08-23 17:21:11.569 [main] Factory - Code (]) has been added to the operators
+[INFO ] 2022-08-23 17:21:11.570 [main] Factory - Code (.) has been added to the operators
+[INFO ] 2022-08-23 17:21:11.651 [main] Runner - Execution is finished!
+[INFO ] 2022-08-23 17:22:16.537 [main] BFContext - Brackets check success!
+[INFO ] 2022-08-23 17:22:16.540 [main] Runner - Program loading success!
+[INFO ] 2022-08-23 17:22:16.540 [main] Runner - Execution starts!
+[INFO ] 2022-08-23 17:22:16.543 [main] Factory - Code (+) has been added to the operators
+[INFO ] 2022-08-23 17:22:16.544 [main] Factory - Code ([) has been added to the operators
+[INFO ] 2022-08-23 17:22:16.544 [main] Factory - Code (>) has been added to the operators
+[INFO ] 2022-08-23 17:22:16.544 [main] Factory - Code (<) has been added to the operators
+[INFO ] 2022-08-23 17:22:16.545 [main] Factory - Code (-) has been added to the operators
+[INFO ] 2022-08-23 17:22:16.545 [main] Factory - Code (]) has been added to the operators
+[INFO ] 2022-08-23 17:22:16.546 [main] Factory - Code (.) has been added to the operators
+[INFO ] 2022-08-23 17:22:16.603 [main] Runner - Execution is finished!
+[INFO ] 2022-08-23 17:22:25.752 [main] BFContext - Brackets check success!
+[INFO ] 2022-08-23 17:22:25.755 [main] Runner - Program loading success!
+[INFO ] 2022-08-23 17:22:25.755 [main] Runner - Execution starts!
+[INFO ] 2022-08-23 17:22:25.758 [main] Factory - Code (+) has been added to the operators
+[INFO ] 2022-08-23 17:22:25.758 [main] Factory - Code ([) has been added to the operators
+[INFO ] 2022-08-23 17:22:25.758 [main] Factory - Code (>) has been added to the operators
+[INFO ] 2022-08-23 17:22:25.758 [main] Factory - Code (<) has been added to the operators
+[INFO ] 2022-08-23 17:22:25.759 [main] Factory - Code (-) has been added to the operators
+[INFO ] 2022-08-23 17:22:25.759 [main] Factory - Code (]) has been added to the operators
+[INFO ] 2022-08-23 17:22:25.760 [main] Factory - Code (.) has been added to the operators
+[INFO ] 2022-08-23 17:22:25.837 [main] Runner - Execution is finished!
+[INFO ] 2022-08-23 17:22:46.928 [main] BFContext - Brackets check success!
+[INFO ] 2022-08-23 17:22:46.932 [main] Runner - Program loading success!
+[INFO ] 2022-08-23 17:22:46.932 [main] Runner - Execution starts!
+[INFO ] 2022-08-23 17:22:46.935 [main] Factory - Code (>) has been added to the operators
+[INFO ] 2022-08-23 17:22:46.936 [main] Factory - Code (+) has been added to the operators
+[INFO ] 2022-08-23 17:22:46.936 [main] Factory - Code ([) has been added to the operators
+[INFO ] 2022-08-23 17:22:46.937 [main] Factory - Code (<) has been added to the operators
+[INFO ] 2022-08-23 17:22:46.937 [main] Factory - Code (-) has been added to the operators
+[INFO ] 2022-08-23 17:22:46.938 [main] Factory - Code (]) has been added to the operators
+[INFO ] 2022-08-23 17:22:46.985 [main] Factory - Code (.) has been added to the operators
+[INFO ] 2022-08-23 17:22:47.079 [main] Runner - Execution is finished!
+[INFO ] 2022-08-23 17:25:04.858 [main] BFContext - Brackets check success!
+[INFO ] 2022-08-23 17:25:04.866 [main] Runner - Program loading success!
+[INFO ] 2022-08-23 17:25:04.867 [main] Runner - Execution starts!
+[INFO ] 2022-08-23 17:25:04.876 [main] Factory - Code (-) has been added to the operators
+[INFO ] 2022-08-23 17:25:04.877 [main] Factory - Code ([) has been added to the operators
+[INFO ] 2022-08-23 17:25:04.878 [main] Factory - Code (>) has been added to the operators
+[INFO ] 2022-08-23 17:25:04.879 [main] Factory - Code (+) has been added to the operators
+[INFO ] 2022-08-23 17:25:04.880 [main] Factory - Code (<) has been added to the operators
+[INFO ] 2022-08-23 17:25:04.881 [main] Factory - Code (]) has been added to the operators
+[INFO ] 2022-08-23 17:25:04.885 [main] Factory - Code (.) has been added to the operators
+[INFO ] 2022-08-23 17:25:04.891 [main] Runner - Execution is finished!

@@ -9,5 +9,5 @@ public interface Operator {
      * @param ctx Brainfuck context
      * @see BFContext
      */
-    public void do_stuff(BFContext ctx);
+    void do_stuff(BFContext ctx);
 }

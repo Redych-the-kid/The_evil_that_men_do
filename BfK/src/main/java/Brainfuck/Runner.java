@@ -8,13 +8,12 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Runner of brainfuck interpreter
+ * Runner class of brainfuck interpreter
  */
 public class Runner {
     /**
      * Runner class constructor
      * @param path File path for a brainfuck program
-     * @throws IllegalArgumentException
      */
     public Runner(String path) throws IllegalArgumentException {
         String program = null;
@@ -37,23 +36,14 @@ public class Runner {
      * @throws IllegalArgumentException - just 4 test)
      */
     public void parse() throws IllegalArgumentException{
-        context.brackets_check();
         logger.info("Execution starts!");
         while(!context.is_finished()){
             Character curr = context.get_op_code();
             Factory.Get().get_op(curr).do_stuff(context);
         }
+        System.out.println();
         logger.info("Execution is finished!");
     }
-
-    /**
-     * For testing purposes...
-     * @param new_code - new code string to replace the old one...
-     */
-    public void set_code(String new_code){
-        context.set_program(new_code);
-    }
-
     /**
      * Context getter(for testing purposes)
      */
@@ -61,5 +51,5 @@ public class Runner {
         return context;
     }
     private static final Logger logger = LogManager.getLogger(Runner.class);
-    private BFContext context;
+    private final BFContext context;
 }

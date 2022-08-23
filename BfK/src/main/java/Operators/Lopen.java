@@ -3,6 +3,9 @@ package Operators;
 import Brainfuck.BFContext;
 import Brainfuck.Operator;
 
+/**
+ * Opening bracket of the loop
+ */
 public class Lopen implements Operator {
     public void do_stuff(BFContext ctx) {
         if(ctx.output() == 0){

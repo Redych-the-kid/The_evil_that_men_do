@@ -3,6 +3,9 @@ package Operators;
 import Brainfuck.BFContext;
 import Brainfuck.Operator;
 
+/**
+ * Closing bracket of the loop
+ */
 public class Lclose implements Operator {
     public void do_stuff(BFContext ctx) {
         if(ctx.output() != 0){
