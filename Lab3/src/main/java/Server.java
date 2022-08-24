@@ -10,18 +10,29 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/*
-    Selector server for Peer.It accepts,reads and writes the response.IN ONE THREAD!Cool, huh?
+/**
+ * Selector server for Peer.It accepts,reads and writes the response.IN ONE THREAD!Cool, huh?
  */
 public class Server implements Runnable {
     private final int port;
     private final String ip;
+
+    /**
+     * Construction method for Server class
+     *
+     * @param port      The number of the server port
+     * @param server_ip The host address for the server
+     */
     public Server(int port, String server_ip) {
         this.port = port;
         this.ip = server_ip;
     }
 
     private static final ConcurrentHashMap<String, String> dht_instance = new ConcurrentHashMap<>(); // I LOVE static because it made it so simple...
+
+    /**
+     * Starts the server
+     */
     public void run() {
         try {
             Selector selector = Selector.open();
@@ -51,6 +62,13 @@ public class Server implements Runnable {
         }
     }
 
+    /**
+     * Put method for server. Used by the client-side of the program
+     *
+     * @param key   DHT key
+     * @param value DHT value
+     * @return Returns true on success and false on failure
+     */
     public static boolean put(String key, String value) {
         //if we put successfully, then print the containment(debug plus to be sure that everything is fine)
         if (!Objects.equals(dht_instance.put(key, value), "null")) {
@@ -61,12 +79,14 @@ public class Server implements Runnable {
         }
     }
 
+    //Accepts the connection to our server-side
     private static void accept(Selector selector, ServerSocketChannel ss_channel) throws IOException {
         SocketChannel client = ss_channel.accept();
         client.configureBlocking(false);
         client.register(selector, SelectionKey.OP_READ);
     }
 
+    //Responds to the request sent by another peer
     private static void response(SelectionKey key) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         SocketChannel client = (SocketChannel) key.channel();
@@ -125,10 +145,22 @@ public class Server implements Runnable {
         }
     }
 
+    /**
+     * Get method for server. Used by the client-side of the program
+     *
+     * @param key DHT key
+     * @return DHT value on success and null on failure
+     */
     public static String get(String key) {
         return dht_instance.get(key);
     }
 
+    /**
+     * Delete method for server. Used by the client-side of the program
+     *
+     * @param key DHT key
+     * @return true on success and false on failure
+     */
     public static boolean del(String key) {
         return dht_instance.remove(key, dht_instance.get(key));
     }

@@ -2,31 +2,51 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 
 
-/*
-	Client side of the peer.He knows where to send and receive messages(get,put and delete + results).
-	You can type 3 types of the commands(letter case is ignored):
-	1.Put [Key] [Value] - puts an element to DHT.Returns "Success" message if everything is fine of "Failure" message if not.
-	2.Get [Key] - gets the element from DHT.If it contains null, then it returns "Value not found!" message.
-	3.Delete [Key] - deletes a key from DHT.Return is the same as from Put operation.
-	Note: maximum length of a message is 1024(including get, put and delete words plus space symbols)
+/**
+ * Client side of the peer.He knows where to send and receive messages(get,put and delete + results).
+ * You can type 3 types of the commands(letter case is ignored):
+ * 1.Put [Key] [Value] - puts an element to DHT.Returns "Success" message if everything is fine of "Failure" message if not.
+ * 2.Get [Key] - gets the element from DHT.If it contains null, then it returns "Value not found!" message.
+ * 3.Delete [Key] - deletes a key from DHT.Return is the same as from Put operation.
+ * 4.Exit - just quits from the app
+ * 5.Reconnect - attempts to reconnect to other peers lol
+ * Note: maximum length of a message is 1024(including get, put and delete words plus space symbols)
  */
 public class Client implements Runnable {
 
     private final ConcurrentHashMap<String, SocketChannel> connections; // Just to know where and to whom I need to send or receive if my HT has nothing...
     private final ConcurrentHashMap<String, Integer> ports;
+    private final ConcurrentLinkedQueue<String> dead_connections;
 
     private final String ip;
 
-    public Client(ConcurrentHashMap<String, SocketChannel> connections, ConcurrentHashMap<String, Integer> server_ports, String server_ip) {
+    /**
+     * Construction method for Client class
+     *
+     * @param connections      Hashmap of server that we are connected to
+     * @param server_ports     Hashmap of ports that we are connected/should be connected to
+     * @param server_ip        Our host address
+     * @param dead_connections Queue of connections that we failed to make
+     */
+    public Client(ConcurrentHashMap<String, SocketChannel> connections, ConcurrentHashMap<String, Integer> server_ports, String server_ip, ConcurrentLinkedQueue<String> dead_connections) {
         this.connections = connections;
         this.ports = server_ports;
         this.ip = server_ip;
+        this.dead_connections = dead_connections;
     }
 
+    /**
+     * Starts the client-side of the app
+     */
     private void print_help() {
         System.out.println("Usage:");
         System.out.println("You can type 3 types of the commands(letter case is ignored):");
@@ -39,6 +59,10 @@ public class Client implements Runnable {
     public void run() {
         String type;
         while (true) {
+            if (dead_connections.size() != 0) {
+                System.out.println("You've failed to connect to " + dead_connections.size() + " servers!Please type \"reconnect\" to reconnect to them!");
+            }
+
             System.out.println("Now you can type!");
 
             //Reading the command line
@@ -51,12 +75,13 @@ public class Client implements Runnable {
             //"Parsing" the command line
             String[] parsed_command = command.split(" ");
             type = parsed_command[0].toLowerCase(); // Ignore case is cool, but it saves me many letters of code
-
             //YandereDev moment
             switch (type) {
 
                 case "put": // Performing put operation(see the description above for more)
-
+                    if (!dead_connections.isEmpty()) {
+                        break;
+                    }
                     if (parsed_command.length != 3) {
                         System.out.println("Put args too short or too long!");
                         break;
@@ -84,6 +109,9 @@ public class Client implements Runnable {
                     break;
 
                 case "get":    // Performing get operation(see the description above for more)
+                    if (!dead_connections.isEmpty()) {
+                        break;
+                    }
                     if (parsed_command.length != 2) {
                         System.out.println("Get args too short or too long!");
                         break;
@@ -107,6 +135,9 @@ public class Client implements Runnable {
 
                     break;
                 case "delete":    // Performing delete operation(see the description above for more)
+                    if (!dead_connections.isEmpty()) {
+                        break;
+                    }
                     if (parsed_command.length != 2) {
                         System.out.println("delete args too short or too long!");
                         break;
@@ -134,6 +165,31 @@ public class Client implements Runnable {
                 case "exit": // It just exits
                     System.out.println("Exiting...");
                     System.exit(0);
+                case "reconnect": // Trying to bring back the dead connections to life...
+                    List<Thread> reconnections = new ArrayList<>();
+                    CountDownLatch countdown = new CountDownLatch(dead_connections.size());
+                    for (String reconnect_name : dead_connections) {
+                        Runnable reconnection = () -> {
+                            if (reconnect_by_name(reconnect_name)) {
+                                dead_connections.remove(reconnect_name);
+                            }
+                            countdown.countDown();
+                        };
+                        Thread reconnection_thread = new Thread(reconnection);
+                        reconnections.add(reconnection_thread);
+                    }
+                    Iterator<Thread> t_iterator = reconnections.iterator();
+                    while (t_iterator.hasNext()) {
+                        Thread thread = t_iterator.next();
+                        thread.start();
+                        t_iterator.remove();
+                    }
+                    try {
+                        countdown.await();
+                    } catch (InterruptedException e) {
+                        System.out.println("WHY CAN'T I COUNT DOWN, MASTER!?");
+                    }
+                    break;
                 default:
                     System.out.println("Wrong command!Type \"help\" to get the command list!");
                     break;
@@ -142,7 +198,7 @@ public class Client implements Runnable {
     }
 
     //"Borrowed" from StackOverflow...It's better than string.hashcode() so why not...
-    public String socket_hash(String Key) {
+    private String socket_hash(String Key) {
         int hash = 7;
         for (char c : Key.toCharArray()) {
             hash = hash * 31 + (int) c;
@@ -151,8 +207,26 @@ public class Client implements Runnable {
         return "server" + hash % (connections.size() + 1);
     }
 
-    //Send the request to other peer and get the response
-    public void send_to_other_peer(String socket_name, String type, String message) {
+    //Reconnection function
+    private boolean reconnect_by_name(String server_name) {
+        boolean result = false;
+        for (int i = 0; i < 3; ++i) { // We have 3 attempts to reconnect
+            try {
+                System.out.println("Trying to reconnect to " + server_name + "...please wait");
+                Thread.sleep(5000); // Waiting 5 secs
+                SocketChannel retry = SocketChannel.open(new InetSocketAddress(ip, ports.get(server_name)));
+                connections.put(server_name, retry);
+                result = true;
+                break;
+            } catch (IOException | InterruptedException e) {
+                System.out.println("Failed to reconnect!Trying again!");
+            }
+        }
+        return result;
+    }
+
+    //Sends the request to other peer and get the response
+    private void send_to_other_peer(String socket_name, String type, String message) {
         try {
             SocketChannel socket = connections.get(socket_name);
             //We need those to send/get messages
@@ -164,19 +238,7 @@ public class Client implements Runnable {
             int read_count = socket.read(buffer);
             if (read_count == -1) { // Oh no!Peer is missing!Trying to get access one more time...
                 System.out.println("Server is probably down rn!Trying to reconnect...");
-                boolean reconnected = false;
-                for (int i = 0; i < 3; ++i) { // We have 3 attempts to connect
-                    try {
-                        System.out.println("Trying to reconnect...please wait");
-                        Thread.sleep(5000); // Waiting 5 secs
-                        SocketChannel retry = SocketChannel.open(new InetSocketAddress(ip, ports.get(socket_name)));
-                        connections.put(socket_name, retry);
-                        reconnected = true;
-                        break;
-                    } catch (IOException | InterruptedException e) {
-                        System.out.println("Failed to reconnect!Trying again!");
-                    }
-                }
+                boolean reconnected = reconnect_by_name(socket_name);
                 if (!reconnected) {
                     System.out.println("Reconnection failed!Try again later!"); // Damn son...
                 } else {

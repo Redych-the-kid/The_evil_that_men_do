@@ -2,9 +2,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Parser utility class to parse the properties file(servers)
+ */
+
 class Parser {
-    /*
-        Parser utility class to parse the properties file(servers)
+    /**
+     * Gets property from properties file in resources by key
+     *
+     * @param key Key to the property
+     * @return Returns null if we failed to get the property or property string value on success
+     * @throws IOException If we failed to get the property-we throw an exception
      */
     public String get_properties(String key) throws IOException {
         Properties properties = new Properties();

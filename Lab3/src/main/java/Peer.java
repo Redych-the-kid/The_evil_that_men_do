@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
-/*
-	This is a peer class.It acts like a client and a server at the same time.It reads server list(he is here too) and then he sends connections to others.
-	He starts server thread and then waiting for connections to finish their jobs.And finally he starts his client side
+/**
+ * This is a peer class.It acts like a client and a server at the same time.It reads server list(he is here too) and then he sends connections to others.
+ * He starts server thread and then waiting for connections to finish their jobs.And finally he starts his client side
  */
 
 public class Peer {
@@ -18,6 +19,8 @@ public class Peer {
     private static int s_port; // Port of the server
     public static String server_name; // Name of the server
     private static final String server_ip = "localhost"; //Assuming that the peers are in the same network
+
+    private static final ConcurrentLinkedQueue<String> dead_connections = new ConcurrentLinkedQueue<>();
 
     private static void print_help() {
         System.out.println("Usage: peer.java + {server_name}(from config file)");
@@ -34,13 +37,14 @@ public class Peer {
         try {
             List<Thread> connections = new ArrayList<>(); // This is for CountDownLatch
             server_name = args[0];
+            System.out.println("Server name: " + server_name);
             /*
                 I'm too lazy to write server names and ports in command line, so I used properties instead!
                 And IT'S NOT DEPRECATED!YAY!
              */
             Parser parser = new Parser();
             int server_count = Integer.parseInt(parser.get_properties("SERVER_COUNTER"));
-            countdown = new CountDownLatch(server_count - 1); // We don't count our server m'kay?
+            countdown = new CountDownLatch(server_count - 1); // We don't count our server mkay?
             for (int i = 0; i < server_count; i++) {
                 String name = parser.get_properties("SERVER_NAME_" + i);
                 int port = Integer.parseInt(parser.get_properties("SERVER_PORT_" + i));
@@ -53,9 +57,9 @@ public class Peer {
                     }
                 } else {
                     //If it's not ours,then connect to them!
-                    Thread connection_thread = new Thread(new Connection(port, name, server_ip, sockets, countdown));
+                    Thread connection_thread = new Thread(new Connection(port, name, server_ip, sockets, countdown, dead_connections));
                     connections.add(connection_thread);
-                    //Add to ports table to be able to reconnect later
+                    //Add to port table to be able to reconnect later
                     socket_ports.put(name, port);
                 }
             }
@@ -74,7 +78,7 @@ public class Peer {
             countdown.await();
 
             //We got connections-release the Client-side!
-            Thread client_thread = new Thread(new Client(sockets, socket_ports, server_ip));
+            Thread client_thread = new Thread(new Client(sockets, socket_ports, server_ip, dead_connections));
             client_thread.start();
         } catch (IOException | InterruptedException e) {
             System.out.println("Peer has thrown an exception!");
