@@ -26,7 +26,9 @@ public class Client implements Runnable {
     private final ConcurrentHashMap<String, SocketChannel> connections; // Just to know where and to whom I need to send or receive if my HT has nothing...
     private final ConcurrentHashMap<String, Integer> ports;
     private final ConcurrentLinkedQueue<String> dead_connections;
-
+    private static final int name_limit = 300;
+    private static final int value_limit = 719;
+    public static final int command_limit = 1024;
     private final String ip;
 
     /**
@@ -53,7 +55,7 @@ public class Client implements Runnable {
         System.out.println("1.Put [Key] [Value] - puts an element to DHT.Returns \"Success\" message if everything is fine of \"Failure\" message if not.");
         System.out.println("2.Get [Key] - gets the element from DHT.If it contains null, then it returns \"Value not found!\" message.");
         System.out.println("3.Delete [Key] - deletes a key from DHT.Return is the same as from Put operation.");
-        System.out.println("Note: maximum length of a message is 1024(including get, put and delete words plus space symbols)");
+        System.out.println("Note: maximum length of a message is " + command_limit + "(including get, put and delete words plus space symbols)");
     }
 
     public void run() {
@@ -68,8 +70,8 @@ public class Client implements Runnable {
             //Reading the command line
             Scanner scanner = new Scanner(System.in);
             String command = scanner.nextLine();
-            if (command.length() > 1024) {
-                System.out.println("ERROR!LEN IS MORE THAN 1024!Please write less");
+            if (command.length() > command_limit) {
+                System.out.println("ERROR!LEN IS MORE THAN " + command_limit + "!Please write less");
                 continue;
             }
             //"Parsing" the command line
@@ -86,10 +88,17 @@ public class Client implements Runnable {
                         System.out.println("Put args too short or too long!");
                         break;
                     }
-
                     //Get name and value
                     String name = parsed_command[1];
+                    if (name.length() > name_limit) {
+                        System.out.println("Key is too big!");
+                        break;
+                    }
                     String value = parsed_command[2];
+                    if (value.length() > value_limit) {
+                        System.out.println("Value is too big!");
+                        break;
+                    }
                     String hash = socket_hash(name);
 
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
@@ -117,7 +126,10 @@ public class Client implements Runnable {
                         break;
                     }
                     String get_name = parsed_command[1];
-
+                    if (get_name.length() > name_limit) {
+                        System.out.println("Key is too big!");
+                        break;
+                    }
                     String get_hash = socket_hash(get_name);
                     //Hash function determines where to get
 
@@ -144,6 +156,10 @@ public class Client implements Runnable {
                     }
 
                     String delete_name = parsed_command[1];
+                    if (delete_name.length() > name_limit) {
+                        System.out.println("Key is too big!");
+                        break;
+                    }
                     String delete_hash = socket_hash(delete_name);
 
                     //If null,then it is in our server_side.Why?In connections, we have like n - 1 servers(we do not connect to ourselves),and our name isn't there!
@@ -219,7 +235,7 @@ public class Client implements Runnable {
                 result = true;
                 break;
             } catch (IOException | InterruptedException e) {
-                System.out.println("Failed to reconnect!Trying again!");
+                System.out.println("Failed to reconnect to " + server_name + "!Trying again!");
             }
         }
         return result;

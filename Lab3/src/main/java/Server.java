@@ -88,7 +88,7 @@ public class Server implements Runnable {
 
     //Responds to the request sent by another peer
     private static void response(SelectionKey key) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        ByteBuffer buffer = ByteBuffer.allocate(Client.command_limit);
         SocketChannel client = (SocketChannel) key.channel();
         int num_read = client.read(buffer);
         if (num_read == -1) {
