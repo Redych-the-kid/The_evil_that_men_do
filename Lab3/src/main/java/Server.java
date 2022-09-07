@@ -16,19 +16,22 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Server implements Runnable {
     private final int port;
     private final String ip;
+    private static final ConcurrentHashMap<String, String> dht_instance = new ConcurrentHashMap<>(); // I LOVE static because it made it so simple...
+    private static Serialisator serialisator = null;
 
     /**
      * Construction method for Server class
      *
+     * @param server_name The name of the server
      * @param port      The number of the server port
      * @param server_ip The host address for the server
      */
-    public Server(int port, String server_ip) {
+    public Server(String server_name, int port, String server_ip) {
         this.port = port;
         this.ip = server_ip;
+        serialisator = new Serialisator(server_name, dht_instance);
+        serialisator.read_table(); // Trying to get a backup file and read the table from it
     }
-
-    private static final ConcurrentHashMap<String, String> dht_instance = new ConcurrentHashMap<>(); // I LOVE static because it made it so simple...
 
     /**
      * Starts the server
@@ -59,6 +62,10 @@ public class Server implements Runnable {
         } catch (Exception e) {
             System.out.println("Server has thrown an exception!");
             e.printStackTrace();
+        } finally { // We should at least try to save something!
+            if(serialisator != null){
+                serialisator.write_table();
+            }
         }
     }
 
@@ -145,6 +152,14 @@ public class Server implements Runnable {
         }
     }
 
+    /**
+     * Writes a backup file for DHT.
+     */
+    public static void write_table(){
+        if(serialisator != null){
+            serialisator.write_table();
+        }
+    }
     /**
      * Get method for server. Used by the client-side of the program
      *

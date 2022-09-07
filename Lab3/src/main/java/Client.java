@@ -17,7 +17,7 @@ import java.util.concurrent.CountDownLatch;
  * 1.Put [Key] [Value] - puts an element to DHT.Returns "Success" message if everything is fine of "Failure" message if not.
  * 2.Get [Key] - gets the element from DHT.If it contains null, then it returns "Value not found!" message.
  * 3.Delete [Key] - deletes a key from DHT.Return is the same as from Put operation.
- * 4.Exit - just quits from the app
+ * 4.Exit - just quits from the app and tries to save the backup of the hashtable
  * 5.Reconnect - attempts to reconnect to other peers lol
  * Note: maximum length of a message is 1024(including get, put and delete words plus space symbols)
  */
@@ -178,8 +178,9 @@ public class Client implements Runnable {
                 case "help": //Prints command list so client knows what to type
                     print_help();
                     break;
-                case "exit": // It just exits
+                case "exit": // Exits and saves the backup table
                     System.out.println("Exiting...");
+                    Server.write_table(); // Calling a server to write down the table in a .bak file
                     System.exit(0);
                 case "reconnect": // Trying to bring back the dead connections to life...
                     List<Thread> reconnections = new ArrayList<>();

@@ -65,7 +65,7 @@ public class Peer {
             }
 
             //Launch the Server side so server can accept!
-            Thread server_thread = new Thread(new Server(s_port, server_ip));
+            Thread server_thread = new Thread(new Server(server_name, s_port, server_ip));
             server_thread.start();
 
             //client can't perform operations if he is not in DHT network,so...
