@@ -2,14 +2,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-
 
 /**
  * Client side of the peer.He knows where to send and receive messages(get,put and delete + results).
@@ -23,13 +19,15 @@ import java.util.concurrent.CountDownLatch;
  */
 public class Client implements Runnable {
 
-    private final ConcurrentHashMap<String, SocketChannel> connections; // Just to know where and to whom I need to send or receive if my HT has nothing...
-    private final ConcurrentHashMap<String, Integer> ports;
+    private static ConcurrentHashMap<String, SocketChannel> connections = null; // Just to know where and to whom I need to send or receive if my HT has nothing...
+    private static ConcurrentHashMap<String, Integer> ports = null;
     private final ConcurrentLinkedQueue<String> dead_connections;
     private static final int name_limit = 300;
     private static final int value_limit = 719;
     public static final int command_limit = 1024;
-    private final String ip;
+    private static String ip = "localhost";
+    private final String client_name;
+    private final int port;
 
     /**
      * Construction method for Client class
@@ -39,10 +37,12 @@ public class Client implements Runnable {
      * @param server_ip        Our host address
      * @param dead_connections Queue of connections that we failed to make
      */
-    public Client(ConcurrentHashMap<String, SocketChannel> connections, ConcurrentHashMap<String, Integer> server_ports, String server_ip, ConcurrentLinkedQueue<String> dead_connections) {
-        this.connections = connections;
-        this.ports = server_ports;
-        this.ip = server_ip;
+    public Client(String name, int port,ConcurrentHashMap <String, SocketChannel> connections, ConcurrentHashMap<String, Integer> server_ports, String server_ip, ConcurrentLinkedQueue<String> dead_connections) {
+        this.client_name = name;
+        this.port = port;
+        Client.connections = connections;
+        ports = server_ports;
+        ip = server_ip;
         this.dead_connections = dead_connections;
     }
 
@@ -55,6 +55,8 @@ public class Client implements Runnable {
         System.out.println("1.Put [Key] [Value] - puts an element to DHT.Returns \"Success\" message if everything is fine of \"Failure\" message if not.");
         System.out.println("2.Get [Key] - gets the element from DHT.If it contains null, then it returns \"Value not found!\" message.");
         System.out.println("3.Delete [Key] - deletes a key from DHT.Return is the same as from Put operation.");
+        System.out.println("4.Exit - just quits from the app and tries to save the backup of the hashtable");
+        System.out.println("5.Reconnect - attempts to reconnect to other peers lol");
         System.out.println("Note: maximum length of a message is " + command_limit + "(including get, put and delete words plus space symbols)");
     }
 
@@ -207,6 +209,33 @@ public class Client implements Runnable {
                         System.out.println("WHY CAN'T I COUNT DOWN, MASTER!?");
                     }
                     break;
+                case "connect":
+                    System.out.println("Trying to connect to existing DHT network...");
+                    countdown = new CountDownLatch(connections.size());
+                    List<Thread> connects = new ArrayList<>();
+                    for(Map.Entry<String, SocketChannel> entry: connections.entrySet()){
+                        Runnable connection = () ->{
+                            System.out.println("Connecting to " + entry.getKey());
+                            String message = String.format("%s %s", client_name, port);
+                            send_to_other_peer(entry.getKey(), "connect", message);
+                            countdown.countDown();
+                            System.out.println("Counted!");
+                        };
+                        Thread connect_thread = new Thread(connection);
+                        connects.add(connect_thread);
+                    }
+                    Iterator<Thread> iterator = connects.iterator();
+                    while(iterator.hasNext()){
+                        Thread thread = iterator.next();
+                        thread.start();
+                        iterator.remove();
+                    }
+                    try {
+                        countdown.await();
+                    } catch (InterruptedException e){
+                        System.out.println("WHY CAN'T I COUNT DOWN, MASTER!?");
+                    }
+                    break;
                 default:
                     System.out.println("Wrong command!Type \"help\" to get the command list!");
                     break;
@@ -215,35 +244,40 @@ public class Client implements Runnable {
     }
 
     //"Borrowed" from StackOverflow...It's better than string.hashcode() so why not...
-    private String socket_hash(String Key) {
-        int hash = 7;
-        for (char c : Key.toCharArray()) {
-            hash = hash * 31 + (int) c;
+    public static String socket_hash(String Key) {
+        if(connections != null){
+            int hash = 7;
+            for (char c : Key.toCharArray()) {
+                hash = hash * 31 + (int) c;
+            }
+            hash = Math.abs(hash);
+            return "server" + hash % (connections.size() + 1);
         }
-        hash = Math.abs(hash);
-        return "server" + hash % (connections.size() + 1);
+        return null;
     }
 
     //Reconnection function
-    private boolean reconnect_by_name(String server_name) {
+    private static boolean reconnect_by_name(String server_name) {
         boolean result = false;
-        for (int i = 0; i < 3; ++i) { // We have 3 attempts to reconnect
-            try {
-                System.out.println("Trying to reconnect to " + server_name + "...please wait");
-                Thread.sleep(5000); // Waiting 5 secs
-                SocketChannel retry = SocketChannel.open(new InetSocketAddress(ip, ports.get(server_name)));
-                connections.put(server_name, retry);
-                result = true;
-                break;
-            } catch (IOException | InterruptedException e) {
-                System.out.println("Failed to reconnect to " + server_name + "!Trying again!");
+        if(ports != null){
+            for (int i = 0; i < 3; ++i) { // We have 3 attempts to reconnect
+                try {
+                    System.out.println("Trying to reconnect to " + server_name + "...please wait");
+                    Thread.sleep(5000); // Waiting 5 secs
+                    SocketChannel retry = SocketChannel.open(new InetSocketAddress(ip, ports.get(server_name)));
+                    connections.put(server_name, retry);
+                    result = true;
+                    break;
+                } catch (IOException | InterruptedException e) {
+                    System.out.println("Failed to reconnect to " + server_name + "!Trying again!");
+                }
             }
         }
         return result;
     }
 
     //Sends the request to other peer and get the response
-    private void send_to_other_peer(String socket_name, String type, String message) {
+    public static void send_to_other_peer(String socket_name, String type, String message) {
         try {
             SocketChannel socket = connections.get(socket_name);
             //We need those to send/get messages
@@ -275,7 +309,7 @@ public class Client implements Runnable {
                 } else {
                     System.out.println("Value not found!");
                 }
-            } else if (type.equals("put") || type.equals("delete")) {
+            } else if (type.equals("put") || type.equals("delete") || type.equals("connect")) {
                 if (response.equals("true")) {
                     System.out.println("Success");
                 } else {

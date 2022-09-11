@@ -14,10 +14,11 @@ public class Serialisator {
 
     /**
      * Construction method for a Serialisator class
+     *
      * @param server_name The name of the server
-     * @param map The table that we are working with
+     * @param map         The table that we are working with
      */
-    public Serialisator(String server_name, ConcurrentHashMap<String, String> map){
+    public Serialisator(String server_name, ConcurrentHashMap<String, String> map) {
         this.server_name = server_name;
         this.map = map;
     }
@@ -25,18 +26,21 @@ public class Serialisator {
     /**
      * Writes the content of the table to server_name.bak file
      */
-    public void write_table(){
-        try{
+    public void write_table() {
+        try {
             File f = new File(server_name + ".bak");
             writer = new FileWriter(f);
-            for(ConcurrentHashMap.Entry<String, String> entry: map.entrySet()){
+            for (ConcurrentHashMap.Entry<String, String> entry : map.entrySet()) {
                 writer.write(entry.getKey() + ":" + entry.getValue());
                 writer.write("\n");
+            }
+            if (map.isEmpty()) {
+                writer.write("");
             }
         } catch (IOException e) {
             System.out.println("Failed to backup the table!");
         } finally {
-            if(writer != null){
+            if (writer != null) {
                 try {
                     writer.close();
                 } catch (IOException e) {
@@ -49,30 +53,30 @@ public class Serialisator {
     /**
      * Reads the content of the table from server_name.bak file if it exists
      */
-    public void read_table(){
-        try{
+    public void read_table() {
+        try {
             File f = new File(server_name + ".bak");
-            if(!f.isFile()){
+            if (!f.isFile()) {
                 System.out.println("No backup table were found!");
                 return;
             }
             reader = new BufferedReader(new FileReader(f));
             String line;
-            while((line = reader.readLine())!= null){
+            while ((line = reader.readLine()) != null) {
                 String[] partition = line.split(":");
-                if(partition.length != 2){
+                if (partition.length != 2) {
                     continue;
                 }
                 String key = partition[0].trim();
                 String value = partition[1].trim();
-                if(!key.equals("") && !value.equals("")){
+                if (!key.equals("") && !value.equals("")) {
                     map.put(key, value);
                 }
             }
         } catch (IOException e) {
             System.out.println("Failed to read the backup table!");
         } finally {
-            if(reader != null){
+            if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException e) {

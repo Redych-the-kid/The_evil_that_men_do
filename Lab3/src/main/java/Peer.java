@@ -3,6 +3,7 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -47,6 +48,9 @@ public class Peer {
             countdown = new CountDownLatch(server_count - 1); // We don't count our server mkay?
             for (int i = 0; i < server_count; i++) {
                 String name = parser.get_properties("SERVER_NAME_" + i);
+                if (!Objects.equals(name, "server" + i)) {
+                    throw new IOException();
+                }
                 int port = Integer.parseInt(parser.get_properties("SERVER_PORT_" + i));
                 if (name.equalsIgnoreCase(server_name)) // If it's our server-bind to server_socket!
                 {
@@ -63,9 +67,12 @@ public class Peer {
                     socket_ports.put(name, port);
                 }
             }
-
+            if(!binded){
+                System.out.println("PLEASE! provide correct server name or server count!");
+                return;
+            }
             //Launch the Server side so server can accept!
-            Thread server_thread = new Thread(new Server(server_name, s_port, server_ip));
+            Thread server_thread = new Thread(new Server(server_name, s_port, server_ip, sockets, dead_connections, socket_ports));
             server_thread.start();
 
             //client can't perform operations if he is not in DHT network,so...
@@ -78,7 +85,7 @@ public class Peer {
             countdown.await();
 
             //We got connections-release the Client-side!
-            Thread client_thread = new Thread(new Client(sockets, socket_ports, server_ip, dead_connections));
+            Thread client_thread = new Thread(new Client(server_name,s_port, sockets, socket_ports, server_ip, dead_connections));
             client_thread.start();
         } catch (IOException | InterruptedException e) {
             System.out.println("Peer has thrown an exception!");

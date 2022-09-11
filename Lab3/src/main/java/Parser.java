@@ -27,7 +27,6 @@ class Parser {
         }
         if (value == null) {
             System.out.println("Failed to read the properties!");
-            throw new IOException();
         }
         return value;
     }

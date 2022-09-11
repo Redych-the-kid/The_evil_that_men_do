@@ -6,30 +6,38 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Selector server for Peer.It accepts,reads and writes the response.IN ONE THREAD!Cool, huh?
  */
 public class Server implements Runnable {
     private final int port;
-    private final String ip;
+    private static String ip = "localhost";
     private static final ConcurrentHashMap<String, String> dht_instance = new ConcurrentHashMap<>(); // I LOVE static because it made it so simple...
     private static Serialisator serialisator = null;
+    private static ConcurrentHashMap<String, SocketChannel> sockets = null;
+    private static ConcurrentLinkedQueue<String> dead_connections = null;
+    private static ConcurrentHashMap<String, Integer> socket_ports = null;
 
     /**
      * Construction method for Server class
      *
      * @param server_name The name of the server
-     * @param port      The number of the server port
-     * @param server_ip The host address for the server
+     * @param port        The number of the server port
+     * @param server_ip   The host address for the server
      */
-    public Server(String server_name, int port, String server_ip) {
+    public Server(String server_name, int port, String server_ip, ConcurrentHashMap<String, SocketChannel> sockets, ConcurrentLinkedQueue<String> dead_connections, ConcurrentHashMap<String, Integer> socket_ports ) {
         this.port = port;
-        this.ip = server_ip;
+        ip = server_ip;
         serialisator = new Serialisator(server_name, dht_instance);
+        Server.sockets = sockets;
+        Server.dead_connections = dead_connections;
+        Server.socket_ports = socket_ports;
         serialisator.read_table(); // Trying to get a backup file and read the table from it
     }
 
@@ -63,7 +71,7 @@ public class Server implements Runnable {
             System.out.println("Server has thrown an exception!");
             e.printStackTrace();
         } finally { // We should at least try to save something!
-            if(serialisator != null){
+            if (serialisator != null) {
                 serialisator.write_table();
             }
         }
@@ -94,7 +102,7 @@ public class Server implements Runnable {
     }
 
     //Responds to the request sent by another peer
-    private static void response(SelectionKey key) throws IOException {
+    private static void response(SelectionKey key) throws IOException, InterruptedException {
         ByteBuffer buffer = ByteBuffer.allocate(Client.command_limit);
         SocketChannel client = (SocketChannel) key.channel();
         int num_read = client.read(buffer);
@@ -148,6 +156,38 @@ public class Server implements Runnable {
                     buffer.flip();
                     client.write(buffer);
                     break;
+                case "connect":
+                    if(dead_connections != null && sockets != null){
+                        System.out.println("Trying to connect new client to the client side");
+                        String name = parsed_message[1];
+                        int port = Integer.parseInt(parsed_message[2]);
+                        if(!sockets.contains(name)){
+                            try{
+                                SocketChannel socket = SocketChannel.open(new InetSocketAddress("localhost", port));
+                                sockets.put(name, socket);
+                            } catch (Exception e){
+                                dead_connections.add(name);
+                                socket_ports.put(name, port);
+                            }
+                        }
+                        if(Client.socket_hash("test") != null && dead_connections.isEmpty()){ //Client exists - rehash!
+                            for(Map.Entry<String, String> entry: dht_instance.entrySet()){
+                                String put_key = entry.getKey();
+                                String put_value = entry.getValue();
+                                String hash = Client.socket_hash(put_key);
+                                if (sockets.get(hash) != null) {
+                                    String put_message = put_key + " " + put_value;
+                                    Client.send_to_other_peer(hash, "put", put_message);
+                                    dht_instance.remove(put_key);
+                                }
+                            }
+                        }
+                        buffer.flip();
+                        buffer.put(String.valueOf("true").getBytes());
+                        buffer.flip();
+                        client.write(buffer);
+                    }
+                    break;
             }
         }
     }
@@ -155,11 +195,12 @@ public class Server implements Runnable {
     /**
      * Writes a backup file for DHT.
      */
-    public static void write_table(){
-        if(serialisator != null){
+    public static void write_table() {
+        if (serialisator != null) {
             serialisator.write_table();
         }
     }
+
     /**
      * Get method for server. Used by the client-side of the program
      *
