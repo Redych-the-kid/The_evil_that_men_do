@@ -31,7 +31,7 @@ public class Server implements Runnable {
      * @param port        The number of the server port
      * @param server_ip   The host address for the server
      */
-    public Server(String server_name, int port, String server_ip, ConcurrentHashMap<String, SocketChannel> sockets, ConcurrentLinkedQueue<String> dead_connections, ConcurrentHashMap<String, Integer> socket_ports ) {
+    public Server(String server_name, int port, String server_ip, ConcurrentHashMap<String, SocketChannel> sockets, ConcurrentLinkedQueue<String> dead_connections, ConcurrentHashMap<String, Integer> socket_ports) {
         this.port = port;
         ip = server_ip;
         serialisator = new Serialisator(server_name, dht_instance);
@@ -102,7 +102,7 @@ public class Server implements Runnable {
     }
 
     //Responds to the request sent by another peer
-    private static void response(SelectionKey key) throws IOException, InterruptedException {
+    private static void response(SelectionKey key) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(Client.command_limit);
         SocketChannel client = (SocketChannel) key.channel();
         int num_read = client.read(buffer);
@@ -157,33 +157,38 @@ public class Server implements Runnable {
                     client.write(buffer);
                     break;
                 case "connect":
-                    if(dead_connections != null && sockets != null){
+                    if (dead_connections != null && sockets != null) {
                         System.out.println("Trying to connect new client to the client side");
                         String name = parsed_message[1];
                         int port = Integer.parseInt(parsed_message[2]);
-                        if(!sockets.contains(name)){
-                            try{
+                        if (!sockets.contains(name)) {
+                            try {
                                 SocketChannel socket = SocketChannel.open(new InetSocketAddress("localhost", port));
                                 sockets.put(name, socket);
-                            } catch (Exception e){
+                            } catch (Exception e) {
                                 dead_connections.add(name);
                                 socket_ports.put(name, port);
                             }
                         }
-                        if(Client.socket_hash("test") != null && dead_connections.isEmpty()){ //Client exists - rehash!
-                            for(Map.Entry<String, String> entry: dht_instance.entrySet()){
+                        if (Client.socket_hash("test") != null && dead_connections.isEmpty()) { //Client exists - rehash!
+                            for (Map.Entry<String, String> entry : dht_instance.entrySet()) {
                                 String put_key = entry.getKey();
                                 String put_value = entry.getValue();
                                 String hash = Client.socket_hash(put_key);
                                 if (sockets.get(hash) != null) {
                                     String put_message = put_key + " " + put_value;
-                                    Client.send_to_other_peer(hash, "put", put_message);
-                                    dht_instance.remove(put_key);
+                                    if (Client.send_to_other_peer(hash, "put", put_message)) {
+                                        dht_instance.remove(put_key);
+                                    } else {
+                                        Client.set_rehash(true);
+                                    }
                                 }
                             }
+                        } else if (!dht_instance.isEmpty()) {
+                            Client.set_rehash(true);
                         }
                         buffer.flip();
-                        buffer.put(String.valueOf("true").getBytes());
+                        buffer.put("true".getBytes());
                         buffer.flip();
                         client.write(buffer);
                     }
@@ -198,6 +203,27 @@ public class Server implements Runnable {
     public static void write_table() {
         if (serialisator != null) {
             serialisator.write_table();
+        }
+    }
+
+    public static void rehash() {
+        boolean setted = false;
+        for (Map.Entry<String, String> entry : dht_instance.entrySet()) {
+            String put_key = entry.getKey();
+            String put_value = entry.getValue();
+            String hash = Client.socket_hash(put_key);
+            if (sockets.get(hash) != null) {
+                String put_message = put_key + " " + put_value;
+                if (Client.send_to_other_peer(hash, "put", put_message)) {
+                    dht_instance.remove(put_key);
+                } else {
+                    Client.set_rehash(true);
+                    setted = true;
+                }
+            }
+        }
+        if (!setted) {
+            Client.set_rehash(false);
         }
     }
 

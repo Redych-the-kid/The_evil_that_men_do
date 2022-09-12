@@ -67,7 +67,7 @@ public class Peer {
                     socket_ports.put(name, port);
                 }
             }
-            if(!binded){
+            if (!binded) {
                 System.out.println("PLEASE! provide correct server name or server count!");
                 return;
             }
@@ -85,7 +85,7 @@ public class Peer {
             countdown.await();
 
             //We got connections-release the Client-side!
-            Thread client_thread = new Thread(new Client(server_name,s_port, sockets, socket_ports, server_ip, dead_connections));
+            Thread client_thread = new Thread(new Client(server_name, s_port, sockets, socket_ports, server_ip, dead_connections));
             client_thread.start();
         } catch (IOException | InterruptedException e) {
             System.out.println("Peer has thrown an exception!");

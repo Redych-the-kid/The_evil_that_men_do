@@ -15,19 +15,24 @@ import java.util.concurrent.CountDownLatch;
  * 3.Delete [Key] - deletes a key from DHT.Return is the same as from Put operation.
  * 4.Exit - just quits from the app and tries to save the backup of the hashtable
  * 5.Reconnect - attempts to reconnect to other peers lol
+ * 6.Connect - attempts to notify connection peers that you exist
+ * 7.Rehash - rehashes the table to get rid of ghost entries
  * Note: maximum length of a message is 1024(including get, put and delete words plus space symbols)
  */
 public class Client implements Runnable {
 
     private static ConcurrentHashMap<String, SocketChannel> connections = null; // Just to know where and to whom I need to send or receive if my HT has nothing...
     private static ConcurrentHashMap<String, Integer> ports = null;
-    private final ConcurrentLinkedQueue<String> dead_connections;
+    private static ConcurrentLinkedQueue<String> dead_connections = null;
     private static final int name_limit = 300;
     private static final int value_limit = 719;
     public static final int command_limit = 1024;
     private static String ip = "localhost";
+    private static boolean rehash;
     private final String client_name;
     private final int port;
+
+    private static final ConcurrentLinkedQueue<String> connect_to = new ConcurrentLinkedQueue<>();
 
     /**
      * Construction method for Client class
@@ -37,13 +42,14 @@ public class Client implements Runnable {
      * @param server_ip        Our host address
      * @param dead_connections Queue of connections that we failed to make
      */
-    public Client(String name, int port,ConcurrentHashMap <String, SocketChannel> connections, ConcurrentHashMap<String, Integer> server_ports, String server_ip, ConcurrentLinkedQueue<String> dead_connections) {
+    public Client(String name, int port, ConcurrentHashMap<String, SocketChannel> connections, ConcurrentHashMap<String, Integer> server_ports, String server_ip, ConcurrentLinkedQueue<String> dead_connections) {
         this.client_name = name;
         this.port = port;
         Client.connections = connections;
         ports = server_ports;
         ip = server_ip;
-        this.dead_connections = dead_connections;
+        Client.dead_connections = dead_connections;
+        first_connect(client_name, port);
     }
 
     /**
@@ -57,6 +63,8 @@ public class Client implements Runnable {
         System.out.println("3.Delete [Key] - deletes a key from DHT.Return is the same as from Put operation.");
         System.out.println("4.Exit - just quits from the app and tries to save the backup of the hashtable");
         System.out.println("5.Reconnect - attempts to reconnect to other peers lol");
+        System.out.println("6.Connect - attempts to notify connection peers that you exist");
+        System.out.println("7.Rehash - rehashes the table to get rid of ghost entries");
         System.out.println("Note: maximum length of a message is " + command_limit + "(including get, put and delete words plus space symbols)");
     }
 
@@ -66,7 +74,12 @@ public class Client implements Runnable {
             if (dead_connections.size() != 0) {
                 System.out.println("You've failed to connect to " + dead_connections.size() + " servers!Please type \"reconnect\" to reconnect to them!");
             }
-
+            if (connect_to.size() != 0) {
+                System.out.println("You've failed to make contact with " + connect_to.size() + " servers!Please type \"connect\" to connect to them!");
+            }
+            if (rehash) {
+                System.out.println("You should rehash all entries in this server by using \"rehash\" command!");
+            }
             System.out.println("Now you can type!");
 
             //Reading the command line
@@ -83,7 +96,7 @@ public class Client implements Runnable {
             switch (type) {
 
                 case "put": // Performing put operation(see the description above for more)
-                    if (!dead_connections.isEmpty()) {
+                    if (!dead_connections.isEmpty() || !connect_to.isEmpty()) {
                         break;
                     }
                     if (parsed_command.length != 3) {
@@ -120,7 +133,7 @@ public class Client implements Runnable {
                     break;
 
                 case "get":    // Performing get operation(see the description above for more)
-                    if (!dead_connections.isEmpty()) {
+                    if (!dead_connections.isEmpty() || !connect_to.isEmpty() || rehash) {
                         break;
                     }
                     if (parsed_command.length != 2) {
@@ -149,7 +162,7 @@ public class Client implements Runnable {
 
                     break;
                 case "delete":    // Performing delete operation(see the description above for more)
-                    if (!dead_connections.isEmpty()) {
+                    if (!dead_connections.isEmpty() || !connect_to.isEmpty() || rehash) {
                         break;
                     }
                     if (parsed_command.length != 2) {
@@ -210,32 +223,43 @@ public class Client implements Runnable {
                     }
                     break;
                 case "connect":
+                    if (!dead_connections.isEmpty()) {
+                        break;
+                    }
                     System.out.println("Trying to connect to existing DHT network...");
-                    countdown = new CountDownLatch(connections.size());
+                    countdown = new CountDownLatch(connect_to.size());
                     List<Thread> connects = new ArrayList<>();
-                    for(Map.Entry<String, SocketChannel> entry: connections.entrySet()){
-                        Runnable connection = () ->{
-                            System.out.println("Connecting to " + entry.getKey());
+                    for (String connect_name : connect_to) {
+                        Runnable connection = () -> {
+                            System.out.println("Connecting to " + connect_name);
                             String message = String.format("%s %s", client_name, port);
-                            send_to_other_peer(entry.getKey(), "connect", message);
+                            if (send_to_other_peer(connect_name, "connect", message)) {
+                                connect_to.remove(connect_name);
+                            }
                             countdown.countDown();
-                            System.out.println("Counted!");
                         };
                         Thread connect_thread = new Thread(connection);
                         connects.add(connect_thread);
                     }
                     Iterator<Thread> iterator = connects.iterator();
-                    while(iterator.hasNext()){
+                    while (iterator.hasNext()) {
                         Thread thread = iterator.next();
                         thread.start();
                         iterator.remove();
                     }
                     try {
                         countdown.await();
-                    } catch (InterruptedException e){
+                    } catch (InterruptedException e) {
                         System.out.println("WHY CAN'T I COUNT DOWN, MASTER!?");
                     }
                     break;
+                case "rehash": {
+                    if (!dead_connections.isEmpty() || !connect_to.isEmpty()) {
+                        break;
+                    }
+                    Server.rehash();
+                    break;
+                }
                 default:
                     System.out.println("Wrong command!Type \"help\" to get the command list!");
                     break;
@@ -245,7 +269,7 @@ public class Client implements Runnable {
 
     //"Borrowed" from StackOverflow...It's better than string.hashcode() so why not...
     public static String socket_hash(String Key) {
-        if(connections != null){
+        if (connections != null) {
             int hash = 7;
             for (char c : Key.toCharArray()) {
                 hash = hash * 31 + (int) c;
@@ -256,10 +280,14 @@ public class Client implements Runnable {
         return null;
     }
 
+    public static void set_rehash(boolean val) {
+        rehash = val;
+    }
+
     //Reconnection function
     private static boolean reconnect_by_name(String server_name) {
         boolean result = false;
-        if(ports != null){
+        if (ports != null) {
             for (int i = 0; i < 3; ++i) { // We have 3 attempts to reconnect
                 try {
                     System.out.println("Trying to reconnect to " + server_name + "...please wait");
@@ -276,8 +304,38 @@ public class Client implements Runnable {
         return result;
     }
 
+    private static void first_connect(String client_name, int port) {
+        System.out.println("Trying to connect to existing DHT network...");
+        CountDownLatch count = new CountDownLatch(connections.size());
+        List<Thread> connects = new ArrayList<>();
+        for (Map.Entry<String, SocketChannel> entry : connections.entrySet()) {
+            Runnable connection = () -> {
+                System.out.println("Connecting to " + entry.getKey());
+                String message = String.format("%s %s", client_name, port);
+                if (!send_to_other_peer(entry.getKey(), "connect", message)) {
+                    connect_to.add(entry.getKey());
+                }
+                count.countDown();
+            };
+            Thread connect_thread = new Thread(connection);
+            connects.add(connect_thread);
+        }
+        Iterator<Thread> iterator = connects.iterator();
+        while (iterator.hasNext()) {
+            Thread thread = iterator.next();
+            thread.start();
+            iterator.remove();
+        }
+        try {
+            count.await();
+        } catch (InterruptedException e) {
+            System.out.println("WHY CAN'T I COUNT DOWN, MASTER!?");
+        }
+        connect_to.addAll(dead_connections);
+    }
+
     //Sends the request to other peer and get the response
-    public static void send_to_other_peer(String socket_name, String type, String message) {
+    public static boolean send_to_other_peer(String socket_name, String type, String message) {
         try {
             SocketChannel socket = connections.get(socket_name);
             //We need those to send/get messages
@@ -296,7 +354,7 @@ public class Client implements Runnable {
                     System.out.println("Reconnection success!"); // Yay, we can finally send the request. DO IT!
                     send_to_other_peer(socket_name, type, message);
                 }
-                return;
+                return false;
             }
             buffer.flip();
             byte[] b = new byte[read_count];
@@ -319,6 +377,8 @@ public class Client implements Runnable {
         } catch (IOException e) {
             System.out.println("Client has thrown an exception!");
             e.printStackTrace();
+            return false;
         }
+        return true;
     }
 }
